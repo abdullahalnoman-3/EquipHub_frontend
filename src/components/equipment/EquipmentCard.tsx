@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { FavoriteButton } from "@/components/equipment/FavoriteButton";
 import Swal from "sweetalert2";
 import { MapPin, Star, Eye } from "lucide-react";
 
@@ -71,10 +72,15 @@ export function EquipmentCard({ item }: { item: EquipmentItem }) {
           </span>
         </div>
 
-        {/* Availability Badge */}
-        <div className="absolute top-3.5 right-3.5">
+        {/* Top Right: Favorite Button & Availability */}
+        <div className="absolute top-3.5 right-3.5 flex items-center gap-2">
+          {/* Favorite Toggle Button */}
+          <div className="p-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-xs">
+            <FavoriteButton equipmentId={item._id} />
+          </div>
+
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-xs ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-xs ${
               isAvailable
                 ? "bg-emerald-600/90 text-white"
                 : "bg-slate-700/90 text-slate-200"

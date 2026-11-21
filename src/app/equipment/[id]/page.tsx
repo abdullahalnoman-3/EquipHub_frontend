@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import { FavoriteButton } from "@/components/equipment/FavoriteButton";
 import {
   ArrowLeft,
   MapPin,
@@ -17,13 +18,12 @@ import {
   Mail,
   Calendar,
   AlertCircle,
-  Loader2,
   FileText,
   CreditCard,
   Lock,
-  Heart,
   Share2,
 } from "lucide-react";
+import Swal from "sweetalert2";
 
 interface EquipmentDetail {
   _id: string;
@@ -117,7 +117,6 @@ export default function EquipmentDetailsPage({
               "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&w=1200&q=80"
           );
         } else {
-          // Fallback to static seed item if present
           const fallback = fallbackItems[id];
           if (fallback) {
             setEquipment(fallback);
@@ -143,6 +142,21 @@ export default function EquipmentDetailsPage({
       fetchDetails();
     }
   }, [id, isAuthenticated]);
+
+  const handleShare = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      }).fire({
+        icon: "success",
+        title: "Link copied to clipboard!",
+      });
+    }
+  };
 
   // Loading skeleton state
   if (authLoading || (loading && !equipment)) {
@@ -193,7 +207,7 @@ export default function EquipmentDetailsPage({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 lg:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Navigation Breadcrumb / Back button */}
+        {/* Navigation Breadcrumb & Actions Bar */}
         <div className="flex items-center justify-between">
           <Link
             href="/equipment"
@@ -203,10 +217,20 @@ export default function EquipmentDetailsPage({
             <span>Back to Catalog</span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs px-3 py-1 rounded-full font-medium bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
-              Private Specification View
-            </span>
+          {/* Top Actions: Favorite Toggle & Share */}
+          <div className="flex items-center gap-2">
+            <FavoriteButton
+              equipmentId={equipment._id}
+              className="p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:bg-rose-50 dark:hover:bg-rose-950/20"
+            />
+            <button
+              type="button"
+              onClick={handleShare}
+              title="Share Equipment Link"
+              className="p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
@@ -400,7 +424,7 @@ export default function EquipmentDetailsPage({
                 </div>
               </div>
 
-              {/* Booking CTA Button (Prepares for Step 15 modal) */}
+              {/* Action Buttons: Booking & Favorite */}
               <div className="space-y-3 pt-2">
                 <button
                   type="button"
@@ -411,7 +435,16 @@ export default function EquipmentDetailsPage({
                   <span>Book Equipment Now</span>
                 </button>
 
-                <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5">
+                {/* Add to Favorites Toggle Button with Text Feedback (Step 14) */}
+                <div className="flex justify-center pt-1">
+                  <FavoriteButton
+                    equipmentId={equipment._id}
+                    showText={true}
+                    className="w-full py-3 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                  />
+                </div>
+
+                <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5 pt-1">
                   <Lock className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Secure 256-bit encrypted checkout via Stripe</span>
                 </p>
