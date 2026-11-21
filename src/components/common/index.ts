@@ -1,2 +1,1 @@
-// Common component exports
-export {};
+export { ThemeToggle } from "./ThemeToggle";

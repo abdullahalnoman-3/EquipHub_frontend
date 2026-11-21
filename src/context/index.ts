@@ -1,2 +1,1 @@
-// Context providers index
-export {};
+export { ThemeProvider, useTheme } from "./ThemeContext";

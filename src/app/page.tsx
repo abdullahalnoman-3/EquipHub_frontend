@@ -1,10 +1,27 @@
 import Link from "next/link";
 import { Wrench, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 export default function HomePage() {
   return (
-    <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <main className="min-h-screen flex flex-col justify-between p-6">
+      {/* Header bar with Theme Toggle */}
+      <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+            E
+          </div>
+          <span className="text-xl font-bold tracking-tight">
+            Equip<span className="text-blue-600">Hub</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-3xl mx-auto space-y-6 text-center py-12">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-sm font-medium">
           <Sparkles className="w-4 h-4" />
@@ -24,7 +41,7 @@ export default function HomePage() {
 
         {/* Feature Cards Preview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 text-left">
-          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
             <Wrench className="w-8 h-8 text-blue-600 mb-3" />
             <h3 className="font-semibold text-lg">Verified Equipment</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -32,7 +49,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
             <ShieldCheck className="w-8 h-8 text-emerald-600 mb-3" />
             <h3 className="font-semibold text-lg">Secure Bookings</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -40,7 +57,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
             <CheckCircle2 className="w-8 h-8 text-amber-600 mb-3" />
             <h3 className="font-semibold text-lg">Live Backend</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -52,10 +69,15 @@ export default function HomePage() {
         {/* Status Callout */}
         <div className="pt-8">
           <p className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
-            Step 1 Complete • Next.js App Router Architecture Initialized
+            Step 2 Complete • Global Theme Provider & Dark/Light Toggle Active
           </p>
         </div>
       </div>
+
+      {/* Simple Footer */}
+      <footer className="text-center py-6 text-sm text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+        © {new Date().getFullYear()} EquipHub. All rights reserved.
+      </footer>
     </main>
   );
 }
