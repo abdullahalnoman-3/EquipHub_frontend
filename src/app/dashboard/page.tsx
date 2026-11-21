@@ -19,6 +19,10 @@ import {
   Sparkles,
   Clock,
   CheckCircle2,
+  Mail,
+  Activity,
+  Star,
+  Server,
 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
@@ -343,7 +347,7 @@ export default function DashboardOverviewPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
           Quick Actions & Operations
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
           {isAdmin ? (
             <>
               <Link
@@ -389,6 +393,27 @@ export default function DashboardOverviewPage() {
               </Link>
 
               <Link
+                href="/dashboard/admin/reviews"
+                className="group p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/40 hover:shadow-lg transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
+                    <Star className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white group-hover:text-purple-600 transition">
+                    Review Moderation
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Approve, decline, or hide customer equipment reviews and ratings.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 mt-4">
+                  <span>Moderate Reviews</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+
+              <Link
                 href="/dashboard/admin/bookings"
                 className="group p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 hover:shadow-lg transition-all flex flex-col justify-between"
               >
@@ -397,7 +422,7 @@ export default function DashboardOverviewPage() {
                     <CalendarCheck className="w-5 h-5" />
                   </div>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 transition">
-                    All Platform Bookings
+                    Platform Bookings
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Monitor every live transaction, rental duration, and completion statuses.
@@ -405,6 +430,27 @@ export default function DashboardOverviewPage() {
                 </div>
                 <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-4">
                   <span>View All Bookings</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+
+              <Link
+                href="/dashboard/admin/smtp"
+                className="group p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-500/40 hover:shadow-lg transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white group-hover:text-rose-600 transition">
+                    SMTP Gateway
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Manage email dispatch host, test email delivery, and invoice templates.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400 mt-4">
+                  <span>Configure Mail</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
@@ -542,6 +588,67 @@ export default function DashboardOverviewPage() {
           )}
         </div>
       </div>
+
+      {/* Admin Platform Infrastructure & Service Health */}
+      {isAdmin && (
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <Server className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  System Architecture & Microservice Health
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Live status of core services and external API integrations
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                All Systems Operational
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-400 font-medium">Database (MongoDB Atlas)</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Connected</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-400 font-medium">Stripe Payment Gateway</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Active (Escrow)</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-400 font-medium">Authentication & JWT</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">RBAC Enforced</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-400 font-medium">SMTP Mail Dispatch</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

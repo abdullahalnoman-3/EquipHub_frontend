@@ -36,6 +36,11 @@ export function Navbar() {
     return pathname.startsWith(href);
   };
 
+  // Hide public navbar on dashboard routes
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
