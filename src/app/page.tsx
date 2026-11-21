@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
-import { Wrench, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
+import { Wrench, ShieldCheck, Sparkles, CheckCircle2, User, LogOut, LogIn, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomePage() {
+  const { user, isAuthenticated, logout, loading } = useAuth();
+
   return (
     <main className="min-h-screen flex flex-col justify-between p-6">
-      {/* Header bar with Theme Toggle */}
+      {/* Header bar with Theme Toggle and Auth buttons */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
@@ -15,7 +20,42 @@ export default function HomePage() {
             Equip<span className="text-blue-600">Hub</span>
           </span>
         </div>
+
         <div className="flex items-center gap-3">
+          {loading ? (
+            <div className="h-9 w-20 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-lg" />
+          ) : isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium hidden sm:inline-block">
+                Hi, <strong className="text-blue-600">{user.name}</strong> ({user.role})
+              </span>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Login</span>
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm"
+              >
+                <span>Register</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
           <ThemeToggle />
         </div>
       </header>
@@ -69,7 +109,7 @@ export default function HomePage() {
         {/* Status Callout */}
         <div className="pt-8">
           <p className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
-            Step 2 Complete • Global Theme Provider & Dark/Light Toggle Active
+            Step 3 Complete • Axios Interceptors & Persistent AuthContext Active
           </p>
         </div>
       </div>
