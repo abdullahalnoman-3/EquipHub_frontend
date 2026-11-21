@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
+import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
 import {
   Package,
   CalendarCheck,
@@ -326,6 +327,16 @@ export default function DashboardOverviewPage() {
           </>
         )}
       </div>
+
+      {/* Visual Analytics Graphs (For Admin & Owner) */}
+      {(isAdmin || isOwner) && (
+        <div className="pt-2">
+          <AnalyticsCharts
+            role={isAdmin ? "Admin" : "Owner"}
+            data={isAdmin ? stats?.monthlyStats || [] : stats?.monthlyEarnings || []}
+          />
+        </div>
+      )}
 
       {/* Quick Action Cards */}
       <div>
