@@ -48,9 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Verify with backend
           try {
-            const response = await api.get("/auth/me");
+            const response = await api.get("/users/me");
             if (response.data && response.data.success) {
-              const freshUser = response.data.data?.user || response.data.user;
+              const freshUser = response.data.data?.user || response.data.data || response.data.user;
               setUser(freshUser);
               localStorage.setItem("equiphub_user", JSON.stringify(freshUser));
             }
@@ -165,9 +165,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Refresh user data from API
   const refreshUser = async () => {
     try {
-      const response = await api.get("/auth/me");
+      const response = await api.get("/users/me");
       if (response.data && response.data.success) {
-        const freshUser = response.data.data?.user || response.data.user;
+        const freshUser = response.data.data?.user || response.data.data || response.data.user;
         setUser(freshUser);
         localStorage.setItem("equiphub_user", JSON.stringify(freshUser));
       }
