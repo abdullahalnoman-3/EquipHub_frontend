@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { FavoriteButton } from "@/components/equipment/FavoriteButton";
+import { BookingModal } from "@/components/booking/BookingModal";
 import {
   ArrowLeft,
   MapPin,
@@ -92,6 +93,7 @@ export default function EquipmentDetailsPage({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string>("");
+  const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
 
   // Private route guard: Redirect to login if user is not authenticated
   useEffect(() => {
@@ -426,9 +428,11 @@ export default function EquipmentDetailsPage({
 
               {/* Action Buttons: Booking & Favorite */}
               <div className="space-y-3 pt-2">
+                {/* Book Equipment Trigger Button (Opens BookingModal) */}
                 <button
                   type="button"
                   disabled={!isAvailable}
+                  onClick={() => setIsBookingOpen(true)}
                   className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01]"
                 >
                   <CreditCard className="w-5 h-5" />
@@ -482,6 +486,15 @@ export default function EquipmentDetailsPage({
           </div>
         </div>
       </div>
+
+      {/* Booking Modal (Step 15) */}
+      {equipment && (
+        <BookingModal
+          isOpen={isBookingOpen}
+          onClose={() => setIsBookingOpen(false)}
+          equipment={equipment}
+        />
+      )}
     </div>
   );
 }
