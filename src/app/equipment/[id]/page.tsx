@@ -7,6 +7,7 @@ import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { FavoriteButton } from "@/components/equipment/FavoriteButton";
 import { BookingModal } from "@/components/booking/BookingModal";
+import ReviewModal from "@/components/reviews/ReviewModal";
 import {
   ArrowLeft,
   MapPin,
@@ -94,6 +95,8 @@ export default function EquipmentDetailsPage({
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string>("");
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [isReviewOpen, setIsReviewOpen] = useState<boolean>(false);
 
   // Private route guard: Redirect to login if user is not authenticated
   useEffect(() => {
@@ -142,8 +145,20 @@ export default function EquipmentDetailsPage({
 
     if (isAuthenticated) {
       fetchDetails();
+      fetchReviews();
     }
   }, [id, isAuthenticated]);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await api.get(`/reviews/equipment/${id}`);
+      if (res.data?.success) {
+        setReviews(res.data.data || []);
+      }
+    } catch (err) {
+      console.warn("Reviews fetch fallback:", err);
+    }
+  };
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -485,7 +500,93 @@ export default function EquipmentDetailsPage({
             </div>
           </div>
         </div>
+
+        {/* Customer Reviews & Ratings Section (Step 24) */}
+        <div className="mt-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center text-amber-400">
+                  <Star className="w-5 h-5 fill-amber-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Customer Reviews & Ratings
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Verified feedback from customers who rented this machine
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsReviewOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition self-start sm:self-auto"
+            >
+              <Star className="w-3.5 h-3.5" />
+              <span>Leave a Review</span>
+            </button>
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-xs text-slate-400">
+                No customer reviews yet for this equipment. Be the first to rent and leave a review!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviews.map((rev) => (
+                <div
+                  key={rev._id}
+                  className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                        {rev.customerName ? rev.customerName.charAt(0).toUpperCase() : "C"}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">
+                          {rev.customerName || "Verified Renter"}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {new Date(rev.createdAt || Date.now()).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-3.5 h-3.5 ${
+                            s <= rev.rating
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-slate-300 dark:text-slate-700"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                    "{rev.comment}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Review Submission Modal (Step 24) */}
+      <ReviewModal
+        isOpen={isReviewOpen}
+        onClose={() => setIsReviewOpen(false)}
+        equipmentId={equipment._id}
+        equipmentName={equipment.name}
+        onSuccess={() => fetchReviews()}
+      />
 
       {/* Booking Modal (Step 15) */}
       {equipment && (

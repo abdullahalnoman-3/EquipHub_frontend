@@ -74,6 +74,7 @@ export default function DashboardSidebar({ mobileOpen, setMobileOpen }: SidebarP
         items: [
           { name: "Manage Users", href: "/dashboard/admin/users", icon: Users },
           { name: "Equipment Approval", href: "/dashboard/admin/equipment", icon: ShieldCheck },
+          { name: "Review Moderation", href: "/dashboard/admin/reviews", icon: Sparkles },
           { name: "All Bookings", href: "/dashboard/admin/bookings", icon: ClipboardList },
           { name: "SMTP Settings", href: "/dashboard/admin/smtp", icon: Mail },
         ],

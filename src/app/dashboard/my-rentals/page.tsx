@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
+import ReviewModal from "@/components/reviews/ReviewModal";
 import {
   CalendarCheck,
   Search,
@@ -27,6 +28,7 @@ export default function MyRentalsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [reviewItem, setReviewItem] = useState<any | null>(null);
 
   useEffect(() => {
     fetchRentals();
@@ -288,13 +290,22 @@ export default function MyRentalsPage() {
                     <td className="py-4 px-6">{getPaymentBadge(rental.paymentStatus)}</td>
                     <td className="py-4 px-6">{getStatusBadge(rental.bookingStatus)}</td>
                     <td className="py-4 px-6 text-right">
-                      <button
-                        onClick={() => setSelectedInvoice(rental)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
-                      >
-                        <Receipt className="w-3.5 h-3.5" />
-                        <span>Invoice</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setReviewItem(rental)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 transition"
+                          title="Write Review"
+                        >
+                          <span>Review</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedInvoice(rental)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
+                        >
+                          <Receipt className="w-3.5 h-3.5" />
+                          <span>Invoice</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -437,6 +448,16 @@ export default function MyRentalsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Review Modal (Step 24) */}
+      {reviewItem && (
+        <ReviewModal
+          isOpen={!!reviewItem}
+          onClose={() => setReviewItem(null)}
+          equipmentId={reviewItem.equipmentId}
+          equipmentName={reviewItem.equipmentName}
+        />
       )}
     </div>
   );
