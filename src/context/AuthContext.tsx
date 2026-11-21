@@ -13,6 +13,7 @@ interface AuthContextType {
   isOwner: boolean;
   isCustomer: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  socialLogin: (data: { name: string; email: string; photoURL?: string }) => Promise<{ success: boolean; message?: string }>;
   register: (formData: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
@@ -95,6 +96,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Google Social login handler
+  const socialLogin = async (socialData: { name: string; email: string; photoURL?: string }) => {
+    try {
+      const response = await api.post("/auth/social-login", socialData);
+      const { success, message, token: receivedToken, user: receivedUser, data } = response.data;
+
+      const authToken = receivedToken || data?.token;
+      const authUser = receivedUser || data?.user;
+
+      if (success && authToken && authUser) {
+        setToken(authToken);
+        setUser(authUser);
+        localStorage.setItem("equiphub_token", authToken);
+        localStorage.setItem("equiphub_user", JSON.stringify(authUser));
+        return { success: true, message: message || "Google login successful" };
+      }
+      return { success: false, message: message || "Google login failed" };
+    } catch (error: any) {
+      const errorMsg =
+        error.response?.data?.message || error.message || "Failed to sign in with Google.";
+      return { success: false, message: errorMsg };
+    }
+  };
+
   // Register handler
   const register = async (formData: any) => {
     try {
@@ -167,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isOwner,
         isCustomer,
         login,
+        socialLogin,
         register,
         logout,
         updateUser,
