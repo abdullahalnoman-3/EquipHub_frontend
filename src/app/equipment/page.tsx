@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState, useTransition, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/services/api";
 import { EquipmentCard, EquipmentItem } from "@/components/equipment/EquipmentCard";
-import { Sparkles, Layers, Loader2, AlertCircle } from "lucide-react";
+import { EquipmentFilters, FilterState } from "@/components/equipment/EquipmentFilters";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Layers, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 
 // Fallback seed equipment in case of offline/network issues
 const fallbackItems: EquipmentItem[] = [
@@ -127,43 +129,159 @@ const fallbackItems: EquipmentItem[] = [
   },
 ];
 
-function EquipmentGridContent() {
+const initialFilters: FilterState = {
+  search: "",
+  category: "All Categories",
+  rentalType: "All Types",
+  availableOnly: false,
+  minPrice: "",
+  maxPrice: "",
+  sortBy: "recent",
+};
+
+function EquipmentCatalogContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const categoryParam = searchParams.get("category");
-  const searchParam = searchParams.get("search");
+
+  // Read initial params from URL if navigated from home categories or search
+  const initialCategory = searchParams.get("category") || "All Categories";
+  const initialSearch = searchParams.get("search") || "";
+
+  const [filters, setFilters] = useState<FilterState>({
+    ...initialFilters,
+    category: initialCategory,
+    search: initialSearch,
+  });
 
   const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Debounce the text search to avoid hammering the backend on fast typing
+  const debouncedSearch = useDebounce(filters.search, 350);
+
+  const handleFilterChange = (key: keyof FilterState, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters(initialFilters);
+  };
+
+  // Fetch from backend API whenever debounced search or filter attributes change
   useEffect(() => {
-    const fetchEquipment = async () => {
+    const fetchFilteredEquipment = async () => {
       try {
         setLoading(true);
-        // Build query string
-        const params = new URLSearchParams();
-        if (categoryParam) params.append("category", categoryParam);
-        if (searchParam) params.append("search", searchParam);
 
-        const response = await api.get(`/equipment?${params.toString()}`);
+        const params = new URLSearchParams();
+
+        if (debouncedSearch.trim()) {
+          params.append("search", debouncedSearch.trim());
+        }
+
+        if (filters.category && filters.category !== "All Categories") {
+          params.append("category", filters.category);
+        }
+
+        if (filters.rentalType && filters.rentalType !== "All Types") {
+          params.append("rentalType", filters.rentalType);
+        }
+
+        if (filters.availableOnly) {
+          params.append("available", "true");
+        }
+
+        if (filters.minPrice) {
+          params.append("minPrice", filters.minPrice);
+        }
+
+        if (filters.maxPrice) {
+          params.append("maxPrice", filters.maxPrice);
+        }
+
+        if (filters.sortBy) {
+          params.append("sortBy", filters.sortBy);
+        }
+
+        // Keep URL in sync without triggering full page reload
+        const queryString = params.toString();
+        const newUrl = queryString ? `/equipment?${queryString}` : "/equipment";
+        window.history.replaceState(null, "", newUrl);
+
+        const response = await api.get(`/equipment?${queryString}`);
+
         if (response.data && response.data.success && Array.isArray(response.data.data)) {
-          if (response.data.data.length > 0) {
-            setEquipmentList(response.data.data);
-          } else {
-            // If API returned 0 items for filtered query, check fallback or show empty
-            setEquipmentList(fallbackItems);
-          }
+          setEquipmentList(response.data.data);
         } else {
-          setEquipmentList(fallbackItems);
+          // Client-side fallback filter
+          let filtered = [...fallbackItems];
+          if (debouncedSearch.trim()) {
+            const q = debouncedSearch.toLowerCase();
+            filtered = filtered.filter(
+              (i) => i.name.toLowerCase().includes(q) || i.location.toLowerCase().includes(q)
+            );
+          }
+          if (filters.category !== "All Categories") {
+            filtered = filtered.filter((i) => i.category === filters.category);
+          }
+          if (filters.availableOnly) {
+            filtered = filtered.filter((i) => (i.availableQuantity ?? 1) > 0);
+          }
+          if (filters.minPrice) {
+            filtered = filtered.filter((i) => i.rentalPrice >= Number(filters.minPrice));
+          }
+          if (filters.maxPrice) {
+            filtered = filtered.filter((i) => i.rentalPrice <= Number(filters.maxPrice));
+          }
+          if (filters.sortBy === "price_asc") {
+            filtered.sort((a, b) => a.rentalPrice - b.rentalPrice);
+          } else if (filters.sortBy === "price_desc") {
+            filtered.sort((a, b) => b.rentalPrice - a.rentalPrice);
+          }
+          setEquipmentList(filtered);
         }
       } catch (err) {
-        setEquipmentList(fallbackItems);
+        // Fallback filter gracefully
+        let filtered = [...fallbackItems];
+        if (debouncedSearch.trim()) {
+          const q = debouncedSearch.toLowerCase();
+          filtered = filtered.filter(
+            (i) => i.name.toLowerCase().includes(q) || i.location.toLowerCase().includes(q)
+          );
+        }
+        if (filters.category !== "All Categories") {
+          filtered = filtered.filter((i) => i.category === filters.category);
+        }
+        if (filters.availableOnly) {
+          filtered = filtered.filter((i) => (i.availableQuantity ?? 1) > 0);
+        }
+        if (filters.minPrice) {
+          filtered = filtered.filter((i) => i.rentalPrice >= Number(filters.minPrice));
+        }
+        if (filters.maxPrice) {
+          filtered = filtered.filter((i) => i.rentalPrice <= Number(filters.maxPrice));
+        }
+        if (filters.sortBy === "price_asc") {
+          filtered.sort((a, b) => a.rentalPrice - b.rentalPrice);
+        } else if (filters.sortBy === "price_desc") {
+          filtered.sort((a, b) => b.rentalPrice - a.rentalPrice);
+        }
+        setEquipmentList(filtered);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEquipment();
-  }, [categoryParam, searchParam]);
+    fetchFilteredEquipment();
+  }, [
+    debouncedSearch,
+    filters.category,
+    filters.rentalType,
+    filters.availableOnly,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.sortBy,
+  ]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 lg:py-14">
@@ -187,13 +305,21 @@ function EquipmentGridContent() {
             {loading ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                <span>Loading catalog...</span>
+                <span>Searching catalog...</span>
               </span>
             ) : (
               <span>Showing {equipmentList.length} Items</span>
             )}
           </div>
         </div>
+
+        {/* Dynamic Search, Filter & Sort Controls (Step 12) */}
+        <EquipmentFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+          totalResults={equipmentList.length}
+        />
 
         {/* 3-Column Responsive Grid Layout */}
         {loading ? (
@@ -215,14 +341,26 @@ function EquipmentGridContent() {
             ))}
           </div>
         ) : equipmentList.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
-            <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              No Equipment Found
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Try adjusting your category or search terms.
-            </p>
+          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                No Equipment Matches Your Criteria
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                We couldn&apos;t find any rental equipment matching your active search and filter options.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all shadow-md cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset All Filters</span>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -245,7 +383,7 @@ export default function AllEquipmentPage() {
         </div>
       }
     >
-      <EquipmentGridContent />
+      <EquipmentCatalogContent />
     </Suspense>
   );
 }
