@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { Navbar, Footer } from "@/components/common";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full antialiased">
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <div className="flex-1 flex flex-col">{children}</div>
+              <Footer />
+            </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
