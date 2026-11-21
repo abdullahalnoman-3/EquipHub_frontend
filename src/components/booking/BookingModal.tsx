@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/services/api";
 import Swal from "sweetalert2";
 import {
   X,
@@ -18,6 +19,7 @@ import {
   Minus,
   Sparkles,
   Lock,
+  Loader2,
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -33,17 +35,15 @@ interface BookingModalProps {
     location: string;
     image?: string;
   };
-  onProceedToPayment?: (bookingDetails: any) => void;
 }
 
 export function BookingModal({
   isOpen,
   onClose,
   equipment,
-  onProceedToPayment,
 }: BookingModalProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   // Helper for date string (YYYY-MM-DD)
   const getTodayString = () => new Date().toISOString().split("T")[0];
@@ -59,6 +59,7 @@ export function BookingModal({
   const [contactNumber, setContactNumber] = useState<string>("");
   const [deliveryAddress, setDeliveryAddress] = useState<string>(equipment.location || "");
   const [notes, setNotes] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   const maxStock = equipment.availableQuantity || 1;
 
@@ -91,8 +92,18 @@ export function BookingModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      Swal.fire({
+        icon: "info",
+        title: "Login Required",
+        text: "Please sign in to complete your equipment booking.",
+      });
+      router.push(`/login?redirect=/equipment/${equipment._id}`);
+      return;
+    }
 
     if (!startDate || !endDate) {
       Swal.fire({
@@ -133,11 +144,10 @@ export function BookingModal({
     const bookingPayload = {
       equipmentId: equipment._id,
       equipmentName: equipment.name,
-      equipmentPrice: equipment.rentalPrice,
       startDate,
       endDate,
-      daysCount,
       quantity,
+      daysCount,
       subtotal,
       refundableDeposit,
       totalAmount,
@@ -146,12 +156,39 @@ export function BookingModal({
       notes,
     };
 
-    if (onProceedToPayment) {
-      onProceedToPayment(bookingPayload);
-    } else {
-      // Store in session and proceed to checkout page
-      sessionStorage.setItem("equiphub_pending_booking", JSON.stringify(bookingPayload));
-      router.push(`/checkout?equipmentId=${equipment._id}`);
+    // Save pending booking details in session storage for the confirmation page
+    sessionStorage.setItem("equiphub_pending_booking", JSON.stringify(bookingPayload));
+
+    setSubmitting(true);
+    try {
+      const res = await api.post("/payments/create-checkout-session", {
+        equipmentId: equipment._id,
+        startDate,
+        endDate,
+        quantity,
+        contactNumber,
+        deliveryAddress,
+        notes,
+      });
+
+      if (res.data?.success && res.data?.url) {
+        // Redirect directly to Stripe Checkout
+        window.location.href = res.data.url;
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Payment Error",
+          text: res.data?.message || "Failed to create checkout session.",
+        });
+        setSubmitting(false);
+      }
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Checkout Error",
+        text: err.response?.data?.message || err.message || "Failed to initiate payment.",
+      });
+      setSubmitting(false);
     }
   };
 
@@ -179,6 +216,7 @@ export function BookingModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={submitting}
             className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -240,7 +278,7 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={handleDecreaseQty}
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || submitting}
                   className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
                 >
                   <Minus className="w-4 h-4" />
@@ -251,7 +289,7 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={handleIncreaseQty}
-                  disabled={quantity >= maxStock}
+                  disabled={quantity >= maxStock || submitting}
                   className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
@@ -351,10 +389,20 @@ export function BookingModal({
           {/* Submit Action Button */}
           <button
             type="submit"
-            className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+            disabled={submitting}
+            className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <CreditCard className="w-5 h-5" />
-            <span>Proceed to Payment (${totalAmount})</span>
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Redirecting to Stripe Checkout...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-5 h-5" />
+                <span>Proceed to Stripe Checkout (${totalAmount})</span>
+              </>
+            )}
           </button>
 
           <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1">
