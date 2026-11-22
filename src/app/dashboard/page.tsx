@@ -90,6 +90,36 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {/* Pending Owner Application Alert Banner */}
+      {((user as any)?.ownerStatus === "Pending" ||
+        ((user as any)?.requestedRole === "Owner" && user?.role !== "Owner")) && (
+        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Clock className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-amber-950 dark:text-amber-200 text-base">
+                  Equipment Owner Application Under Review
+                </h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">
+                  Pending Admin Approval
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300 mt-1 leading-relaxed max-w-2xl">
+                You registered with an <strong>Equipment Owner</strong> request. Your account is currently in queue for administrator verification. You can rent machinery in the meantime, and your portal will automatically upgrade to the Owner Dashboard once approved.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 self-end sm:self-center">
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 bg-white/60 dark:bg-black/30 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800">
+              ⏳ Awaiting Verification
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-6 sm:p-8 shadow-xl shadow-blue-500/10">
         <div className="relative z-10 max-w-2xl">

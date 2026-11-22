@@ -93,8 +93,12 @@ export default function RegisterPage() {
       });
 
       if (result.success) {
-        toast.success("Registration successful! Welcome to EquipHub.");
-        router.push("/");
+        if (formData.role === "Owner") {
+          toast.success("Account registered! Your Owner application has been submitted to Admin for review.", { duration: 5000 });
+        } else {
+          toast.success("Registration successful! Welcome to EquipHub.");
+        }
+        router.push("/dashboard");
       } else {
         toast.error(result.message || "Something went wrong. Please try again.");
       }
@@ -199,6 +203,14 @@ export default function RegisterPage() {
                 List / Own Gear
               </button>
             </div>
+            {formData.role === "Owner" && (
+              <div className="mt-2.5 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Owner Review Note:</strong> Your application to list machinery will be submitted to the Admin for approval. You can browse and rent immediately while review is completed.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Avatar Photo (Upload or URL) */}

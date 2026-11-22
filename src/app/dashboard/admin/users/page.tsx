@@ -62,13 +62,65 @@ export default function AdminUsersPage() {
       const res = await api.patch(`/users/${userId}/role`, { role: newRole });
       if (res.data?.success) {
         setUsers((prev) =>
-          prev.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
+          prev.map((u) =>
+            u._id === userId
+              ? {
+                  ...u,
+                  role: newRole,
+                  ownerStatus: newRole === "Owner" ? "Approved" : "None",
+                }
+              : u
+          )
         );
 
         toast.success(`Role updated to ${newRole}!`);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Failed to update role.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Quick 1-click approve owner application
+  const handleApproveOwner = async (userId: string, userName: string) => {
+    setUpdatingId(userId);
+    try {
+      const res = await api.patch(`/users/${userId}/owner-status`, { status: "Approved" });
+      if (res.data?.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === userId
+              ? { ...u, role: "Owner", ownerStatus: "Approved" }
+              : u
+          )
+        );
+        toast.success(`${userName} approved as Equipment Owner!`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Failed to approve owner application.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Quick 1-click reject owner application
+  const handleRejectOwner = async (userId: string, userName: string) => {
+    setUpdatingId(userId);
+    try {
+      const res = await api.patch(`/users/${userId}/owner-status`, { status: "Rejected" });
+      if (res.data?.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === userId
+              ? { ...u, role: "Customer", ownerStatus: "Rejected" }
+              : u
+          )
+        );
+        toast.success(`Owner application for ${userName} rejected.`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Failed to reject owner application.");
     } finally {
       setUpdatingId(null);
     }
@@ -83,14 +135,22 @@ export default function AdminUsersPage() {
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u._id?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (roleFilter === "all") return matchesSearch;
-    return matchesSearch && u.role?.toLowerCase() === roleFilter.toLowerCase();
+    if (!matchesSearch) return false;
+
+    if (roleFilter === "all") return true;
+    if (roleFilter === "owner-pending") {
+      return u.ownerStatus === "Pending" || (u.requestedRole === "Owner" && u.role !== "Owner");
+    }
+    return u.role?.toLowerCase() === roleFilter.toLowerCase();
   });
 
   // Calculate counts
   const customerCount = users.filter((u) => u.role === "Customer").length;
   const ownerCount = users.filter((u) => u.role === "Owner").length;
   const adminCount = users.filter((u) => u.role === "Admin").length;
+  const pendingOwnerCount = users.filter(
+    (u) => u.ownerStatus === "Pending" || (u.requestedRole === "Owner" && u.role !== "Owner")
+  ).length;
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -116,7 +176,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* KPI Highlight Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Users</p>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{users.length}</h3>
@@ -133,6 +193,26 @@ export default function AdminUsersPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-purple-500">System Admins</p>
           <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{adminCount}</h3>
         </div>
+        <div
+          onClick={() => setRoleFilter(roleFilter === "owner-pending" ? "all" : "owner-pending")}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${
+            pendingOwnerCount > 0
+              ? "bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/80 hover:border-amber-400"
+              : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Pending Owners
+            </p>
+            {pendingOwnerCount > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            )}
+          </div>
+          <h3 className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+            {pendingOwnerCount}
+          </h3>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -141,6 +221,11 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-full md:w-auto overflow-x-auto">
           {[
             { id: "all", label: "All Users" },
+            {
+              id: "owner-pending",
+              label: `Owner Applications ${pendingOwnerCount > 0 ? `(${pendingOwnerCount})` : ""}`,
+              highlight: pendingOwnerCount > 0,
+            },
             { id: "customer", label: "Customers" },
             { id: "owner", label: "Owners" },
             { id: "admin", label: "Admins" },
@@ -148,13 +233,16 @@ export default function AdminUsersPage() {
             <button
               key={tab.id}
               onClick={() => setRoleFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 roleFilter === tab.id
                   ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : tab.highlight
+                  ? "text-amber-700 dark:text-amber-400 hover:text-amber-800 font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              {tab.label}
+              {tab.highlight && <Clock className="w-3.5 h-3.5 animate-pulse text-amber-500" />}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -227,10 +315,18 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getRoleBadge(u.role)}`}>
-                        <Shield className="w-3 h-3" />
-                        {u.role || "Customer"}
-                      </span>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getRoleBadge(u.role)}`}>
+                          <Shield className="w-3 h-3" />
+                          {u.role || "Customer"}
+                        </span>
+                        {(u.ownerStatus === "Pending" || (u.requestedRole === "Owner" && u.role !== "Owner")) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse">
+                            <Clock className="w-2.5 h-2.5" />
+                            Pending Owner Review
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-6">
                       <span className="text-xs text-slate-500">
@@ -238,7 +334,28 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {(u.ownerStatus === "Pending" || (u.requestedRole === "Owner" && u.role !== "Owner")) && (
+                          <div className="flex items-center gap-1.5 mr-2">
+                            <button
+                              onClick={() => handleApproveOwner(u._id, u.name)}
+                              disabled={updatingId === u._id}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1 transition shrink-0"
+                              title="Approve as Owner"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve Owner</span>
+                            </button>
+                            <button
+                              onClick={() => handleRejectOwner(u._id, u.name)}
+                              disabled={updatingId === u._id}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 transition shrink-0"
+                              title="Reject Owner Application"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
                         <select
                           value={u.role || "Customer"}
                           disabled={updatingId === u._id}

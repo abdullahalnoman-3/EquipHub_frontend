@@ -6,6 +6,9 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  requestedRole?: string;
+  ownerStatus?: "None" | "Pending" | "Approved" | "Rejected";
+  ownerAppliedAt?: string;
   avatar?: string;
   photoURL?: string;
   phone?: string;
