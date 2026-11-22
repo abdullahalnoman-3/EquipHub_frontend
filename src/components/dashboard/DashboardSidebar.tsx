@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Mail,
   CreditCard,
+  Share2,
   UserCheck,
   Home,
   LogOut,
@@ -79,6 +80,7 @@ export default function DashboardSidebar({ mobileOpen, setMobileOpen }: SidebarP
           { name: "All Bookings", href: "/dashboard/admin/bookings", icon: ClipboardList },
           { name: "SMTP Settings", href: "/dashboard/admin/smtp", icon: Mail },
           { name: "Payment Gateway", href: "/dashboard/admin/payment-settings", icon: CreditCard },
+          { name: "Social Login Settings", href: "/dashboard/admin/social-settings", icon: Share2 },
         ],
       });
     }
