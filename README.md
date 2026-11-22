@@ -4,12 +4,47 @@
 
 ---
 
-## 🌐 Live URLs & Repositories
+## 🌐 Live URLs & Production Domains
 
-- **Frontend Client:** `http://localhost:3000`
-- **Backend API Base:** `http://equiphubadmin.hmnoman.com/api/v1` (Local: `http://localhost:5000/api/v1`)
+- **Production Frontend Client:** `https://equiphub.hmnoman.com` (SSL / Non-SSL: `http://equiphub.hmnoman.com`)
+- **Production Backend API:** `https://equiphubadmin.hmnoman.com/api/v1` (SSL / Non-SSL: `http://equiphubadmin.hmnoman.com/api/v1`)
+- **Local Client:** `http://localhost:3000`
 - **GitHub Frontend Repository:** [https://github.com/abdullahalnoman-3/EquipHub_frontend.git](https://github.com/abdullahalnoman-3/EquipHub_frontend.git)
 - **GitHub Backend Repository:** [https://github.com/abdullahalnoman-3/EquipHub_backend.git](https://github.com/abdullahalnoman-3/EquipHub_backend.git)
+
+---
+
+## 🚀 cPanel Deployment Instructions (Frontend Next.js)
+
+### Method 1: Using cPanel "Setup Node.js App"
+1. In cPanel, navigate to **Software** > **Setup Node.js App**.
+2. Click **Create Application**:
+   - **Node.js Version:** `20.x` or `22.x`
+   - **Application Mode:** `Production`
+   - **Application Root:** `equiphub_frontend`
+   - **Application URL:** `equiphub.hmnoman.com`
+   - **Application Startup File:** `server.js`
+3. Upload frontend files to the directory.
+4. Run `npm install` and build:
+   ```bash
+   npm install
+   npm run build
+   ```
+5. Set Environment Variables in `.env.local` or cPanel app interface:
+   ```env
+   NEXT_PUBLIC_API_URL=https://equiphubadmin.hmnoman.com/api/v1
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51MockStripePublishableKeyForEquipHubDemo
+   ```
+6. Click **Restart Application**. EquipHub will be live on `https://equiphub.hmnoman.com`.
+
+### Method 2: Reverse Proxy / PM2
+If you have SSH/Terminal access on cPanel:
+```bash
+cd equiphub_frontend
+npm install
+npm run build
+pm2 start server.js --name "equiphub-frontend"
+```
 
 ---
 

@@ -1,7 +1,21 @@
 import axios from "axios";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+// Dynamically resolves backend API base URL with SSL / non-SSL support
+export const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("equiphub.hmnoman.com") || host.includes("hmnoman.com")) {
+      const proto = window.location.protocol; // "http:" or "https:"
+      return `${proto}//equiphubadmin.hmnoman.com/api/v1`;
+    }
+  }
+  return "http://localhost:5000/api/v1";
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
