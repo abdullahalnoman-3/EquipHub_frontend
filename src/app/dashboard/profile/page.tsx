@@ -71,10 +71,7 @@ export default function ProfilePage() {
       setPhotoURL(uploadedUrl);
       setImageError(false);
 
-      Toast.fire({
-        icon: "success",
-        title: "Photo uploaded successfully!",
-      });
+      toast.success("Photo uploaded successfully!");
 
       setToastBanner({
         type: "success",
@@ -82,10 +79,7 @@ export default function ProfilePage() {
         message: "Your new photo is staged. Click 'Save Profile Changes' below to update.",
       });
     } catch (err: any) {
-      Toast.fire({
-        icon: "error",
-        title: err.message || "Failed to upload image",
-      });
+      toast.error(err.message || "Failed to upload image");
       setToastBanner({
         type: "error",
         title: "Upload Failed",

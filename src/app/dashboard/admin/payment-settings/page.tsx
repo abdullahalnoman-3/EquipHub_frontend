@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   CreditCard,
   KeyRound,
@@ -26,18 +26,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-// SweetAlert2 Floating Toast Notification
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.onmouseenter = Swal.stopTimer;
-    toast.onmouseleave = Swal.resumeTimer;
-  },
-});
+
 
 export default function AdminPaymentSettingsPage() {
   const [activeTab, setActiveTab] = useState<"credentials" | "escrow">("credentials");
@@ -107,19 +96,14 @@ export default function AdminPaymentSettingsPage() {
         setIsConfigured(true);
         setLastUpdated(new Date().toLocaleString());
 
-        Toast.fire({
-          icon: "success",
-          title: "Payment gateway credentials saved successfully!",
-        });
+        toast.success("Payment gateway credentials saved successfully!");
       }
     } catch (err: any) {
-      Toast.fire({
-        icon: "error",
-        title:
-          err.response?.data?.message ||
+      toast.error(
+        err.response?.data?.message ||
           err.message ||
-          "Failed to update payment settings.",
-      });
+          "Failed to update payment settings."
+      );
     } finally {
       setSaving(false);
     }
@@ -138,10 +122,7 @@ export default function AdminPaymentSettingsPage() {
           message: res.data.message || "Stripe Gateway is operational!",
         });
 
-        Toast.fire({
-          icon: "success",
-          title: "Stripe connection verified successfully!",
-        });
+        toast.success("Stripe connection verified successfully!");
       } else {
         throw new Error(res.data?.message || "Verification failed");
       }
@@ -155,10 +136,7 @@ export default function AdminPaymentSettingsPage() {
         message: msg,
       });
 
-      Toast.fire({
-        icon: "error",
-        title: msg,
-      });
+      toast.error(msg);
     } finally {
       setTesting(false);
     }
