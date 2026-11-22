@@ -13,7 +13,7 @@ interface AuthContextType {
   isOwner: boolean;
   isCustomer: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  socialLogin: (data: { name: string; email: string; photoURL?: string }) => Promise<{ success: boolean; message?: string }>;
+  socialLogin: (data: { name: string; email: string; photoURL?: string; provider?: string }) => Promise<{ success: boolean; message?: string }>;
   register: (formData: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
@@ -96,8 +96,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Google Social login handler
-  const socialLogin = async (socialData: { name: string; email: string; photoURL?: string }) => {
+  // Social login handler (Google / GitHub)
+  const socialLogin = async (socialData: {
+    name: string;
+    email: string;
+    photoURL?: string;
+    provider?: string;
+  }) => {
     try {
       const response = await api.post("/auth/social-login", socialData);
       const { success, message, token: receivedToken, user: receivedUser, data } = response.data;
@@ -110,12 +115,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(authUser);
         localStorage.setItem("equiphub_token", authToken);
         localStorage.setItem("equiphub_user", JSON.stringify(authUser));
-        return { success: true, message: message || "Google login successful" };
+        return {
+          success: true,
+          message: message || `${socialData.provider || "Social"} login successful`,
+        };
       }
-      return { success: false, message: message || "Google login failed" };
+      return {
+        success: false,
+        message: message || `${socialData.provider || "Social"} login failed`,
+      };
     } catch (error: any) {
       const errorMsg =
-        error.response?.data?.message || error.message || "Failed to sign in with Google.";
+        error.response?.data?.message ||
+        error.message ||
+        `Failed to sign in with ${socialData.provider || "Social account"}.`;
       return { success: false, message: errorMsg };
     }
   };
