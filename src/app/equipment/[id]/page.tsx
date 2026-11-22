@@ -344,16 +344,10 @@ export default function EquipmentDetailsPage({
                     <span className="font-medium">{equipment.location}</span>
                   </div>
                   {(() => {
-                    const count = reviews.length > 0
-                      ? reviews.length
-                      : (typeof (equipment as any).reviewCount === 'number'
-                          ? (equipment as any).reviewCount
-                          : (typeof equipment.totalReviews === 'number' ? equipment.totalReviews : 0));
-                    const avg = reviews.length > 0
-                      ? (reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1)
-                      : (typeof (equipment as any).averageRating === 'number'
-                          ? (equipment as any).averageRating.toFixed(1)
-                          : (typeof equipment.rating === 'number' ? equipment.rating.toFixed(1) : "0.0"));
+                    const count = reviews.length;
+                    const avg = count > 0
+                      ? (reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0) / count).toFixed(1)
+                      : "0.0";
                     return (
                       <div className="flex items-center gap-1 font-bold text-sm">
                         <Star className={`w-4 h-4 ${count > 0 ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`} />
