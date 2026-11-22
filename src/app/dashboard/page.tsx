@@ -23,6 +23,7 @@ import {
   Activity,
   Star,
   Server,
+  CreditCard,
 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
@@ -451,6 +452,27 @@ export default function DashboardOverviewPage() {
                 </div>
                 <div className="flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400 mt-4">
                   <span>Configure Mail</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+
+              <Link
+                href="/dashboard/admin/payment-settings"
+                className="group p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 hover:shadow-lg transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 transition">
+                    Payment Gateway
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Manage Stripe API keys, toggle live/test modes, and escrow fees.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-4">
+                  <span>Configure Gateway</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>

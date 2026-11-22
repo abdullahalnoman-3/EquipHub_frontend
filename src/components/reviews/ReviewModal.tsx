@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import { Star, X, Loader2, MessageSquare, Sparkles, CheckCircle2 } from "lucide-react";
 
 interface ReviewModalProps {
@@ -31,11 +32,7 @@ export default function ReviewModal({
     e.preventDefault();
 
     if (!comment.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Review Comment Required",
-        text: "Please share a few sentences about your rental experience.",
-      });
+      toast.error("Please share a few sentences about your rental experience.");
       return;
     }
 
@@ -48,28 +45,18 @@ export default function ReviewModal({
       });
 
       if (res.data?.success) {
-        Swal.fire({
-          icon: "success",
-          title: "Thank You For Your Review!",
-          text: "Your review has been submitted and will appear on the equipment profile.",
-          confirmButtonColor: "#2563eb",
-          timer: 2500,
-        });
-
+        toast.success("Thank you! Your review has been submitted.");
         setComment("");
         setRating(5);
         if (onSuccess) onSuccess();
         onClose();
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Submission Notice",
-        text:
-          err.response?.data?.message ||
-          err.message ||
-          "Could not submit review. Please ensure you have rented this equipment.",
-      });
+      toast.error(
+        err.response?.data?.message ||
+        err.message ||
+        "Could not submit review. Please ensure you have rented this equipment."
+      );
     } finally {
       setSubmitting(false);
     }

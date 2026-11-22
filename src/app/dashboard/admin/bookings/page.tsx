@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   ClipboardList,
   Search,
@@ -16,6 +18,7 @@ import {
   Receipt,
   ExternalLink,
   Filter,
+  Trash2,
 } from "lucide-react";
 
 export default function AdminAllBookingsPage() {
@@ -65,8 +68,47 @@ export default function AdminAllBookingsPage() {
   const activeCount = rentals.filter((r) => r.bookingStatus === "Active" || r.bookingStatus === "Confirmed").length;
   const completedCount = rentals.filter((r) => r.bookingStatus === "Completed").length;
 
+  // Handle Delete Order for Admin
+  const handleDeleteOrder = async (orderId: string, equipmentName: string) => {
+    const confirm = await Swal.fire({
+      title: "Delete Rental Order?",
+      text: `Are you sure you want to permanently delete this order for "${equipmentName}"? (All orders for an equipment must be deleted before deleting the equipment).`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Delete Order",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        const res = await api.delete(`/bookings/${orderId}`);
+        if (res.data?.success) {
+          setRentals((prev) => prev.filter((r) => r._id !== orderId));
+          toast.success("Rental order deleted.");
+        }
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || err.message || "Failed to delete order.");
+      }
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+            <Clock className="w-3.5 h-3.5" />
+            Pending
+          </span>
+        );
+      case "approved":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Approved
+          </span>
+        );
       case "active":
       case "confirmed":
         return (
@@ -82,11 +124,12 @@ export default function AdminAllBookingsPage() {
             Completed
           </span>
         );
+      case "rejected":
       case "cancelled":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
             <XCircle className="w-3.5 h-3.5" />
-            Cancelled
+            {status?.toLowerCase() === "rejected" ? "Rejected" : "Cancelled"}
           </span>
         );
       default:
@@ -234,16 +277,30 @@ export default function AdminAllBookingsPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="font-extrabold text-slate-900 dark:text-white text-sm">
+                      <span className={`font-extrabold text-sm ${r.paymentStatus?.toLowerCase().includes("refund") ? "text-slate-700 dark:text-slate-300 line-through" : "text-slate-900 dark:text-white"}`}>
                         ${r.totalAmount}
                       </span>
-                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Paid (Stripe)</p>
+                      {r.paymentStatus?.toLowerCase().includes("refund") ? (
+                        <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-400">Refund Processing</p>
+                      ) : (
+                        <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Paid (Stripe)</p>
+                      )}
                     </td>
                     <td className="py-4 px-6">{getStatusBadge(r.bookingStatus)}</td>
                     <td className="py-4 px-6 text-right">
-                      <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                        {r.transactionId ? r.transactionId.slice(-10) : "txn_mock"}
-                      </span>
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
+                          {r.transactionId ? r.transactionId.slice(-10) : "txn_mock"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(r._id, r.equipmentName)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-800 transition cursor-pointer"
+                          title="Delete rental order"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

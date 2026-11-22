@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { uploadToImgBB } from "@/utils/uploadImage";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   User,
   Mail,
@@ -57,11 +58,7 @@ export default function RegisterPage() {
       setFormData((prev) => ({ ...prev, avatar: url }));
       setImagePreview(url);
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Image Upload Failed",
-        text: err.message || "Could not upload image. You can also paste an image URL directly.",
-      });
+      toast.error(err.message || "Could not upload image. You can also paste an image URL directly.");
     } finally {
       setUploadingImage(false);
     }
@@ -71,29 +68,17 @@ export default function RegisterPage() {
     e.preventDefault();
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Fields",
-        text: "Please enter your name and email address.",
-      });
+      toast.error("Please enter your name and email address.");
       return;
     }
 
     if (!isPasswordValid) {
-      Swal.fire({
-        icon: "error",
-        title: "Invalid Password",
-        text: "Password must have at least 6 characters, including 1 uppercase and 1 lowercase letter.",
-      });
+      toast.error("Password must have at least 6 characters, including 1 uppercase and 1 lowercase letter.");
       return;
     }
 
     if (!passwordsMatch) {
-      Swal.fire({
-        icon: "error",
-        title: "Passwords Don't Match",
-        text: "Please make sure your password and confirmation match.",
-      });
+      toast.error("Please make sure your password and confirmation match.");
       return;
     }
 
@@ -108,27 +93,13 @@ export default function RegisterPage() {
       });
 
       if (result.success) {
-        await Swal.fire({
-          icon: "success",
-          title: "Registration Successful!",
-          text: result.message || "Your EquipHub account is ready.",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+        toast.success("Registration successful! Welcome to EquipHub.");
         router.push("/");
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Registration Failed",
-          text: result.message || "Something went wrong. Please try again.",
-        });
+        toast.error(result.message || "Something went wrong. Please try again.");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.message || "Unable to complete registration.",
-      });
+      toast.error(err.message || "Unable to complete registration.");
     } finally {
       setSubmitting(false);
     }

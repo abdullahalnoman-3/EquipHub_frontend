@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   ShieldCheck,
   Package,
@@ -55,21 +56,10 @@ export default function AdminEquipmentModerationPage() {
           prev.map((item) => (item._id === id ? { ...item, status: newStatus } : item))
         );
 
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: `"${name}" marked as ${newStatus}`,
-          showConfirmButton: false,
-          timer: 2000,
-        });
+        toast.success(`"${name}" marked as ${newStatus}`);
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Moderation Failed",
-        text: err.response?.data?.message || err.message || "Failed to update equipment status.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to update equipment status.");
     } finally {
       setProcessingId(null);
     }
@@ -94,21 +84,35 @@ export default function AdminEquipmentModerationPage() {
       const res = await api.delete(`/admin/equipment/${id}`);
       if (res.data?.success) {
         setEquipmentList((prev) => prev.filter((item) => item._id !== id));
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: "Equipment removed successfully.",
-          showConfirmButton: false,
-          timer: 2000,
-        });
+        toast.success("Equipment removed successfully.");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Deletion Failed",
-        text: err.response?.data?.message || err.message || "Failed to delete equipment.",
-      });
+      const hasOrders = err.response?.data?.hasOrders;
+      const msg = err.response?.data?.message || err.message || "Failed to delete equipment.";
+
+      if (hasOrders) {
+        Swal.fire({
+          icon: "warning",
+          title: "Cannot Delete Equipment",
+          html: `
+            <p class="text-sm text-slate-700 dark:text-slate-300 font-medium mb-3">${msg}</p>
+            <div class="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs rounded-xl border border-amber-200 dark:border-amber-800 text-left">
+              <strong>Order Dependency:</strong> All rental orders linked to this equipment must be deleted first before deleting this equipment listing.
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonColor: "#2563eb",
+          cancelButtonColor: "#64748b",
+          confirmButtonText: "Go to Bookings",
+          cancelButtonText: "Cancel",
+        }).then((modalRes) => {
+          if (modalRes.isConfirmed) {
+            window.location.href = "/dashboard/admin/bookings";
+          }
+        });
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setProcessingId(null);
     }
@@ -273,6 +277,9 @@ export default function AdminEquipmentModerationPage() {
                         <img
                           src={item.image || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80"}
                           alt={item.name}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80";
+                          }}
                           className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
                         />
                         <div>

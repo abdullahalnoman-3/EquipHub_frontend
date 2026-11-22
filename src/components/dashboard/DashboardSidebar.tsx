@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ClipboardList,
   Mail,
+  CreditCard,
   UserCheck,
   Home,
   LogOut,
@@ -77,6 +78,7 @@ export default function DashboardSidebar({ mobileOpen, setMobileOpen }: SidebarP
           { name: "Review Moderation", href: "/dashboard/admin/reviews", icon: Sparkles },
           { name: "All Bookings", href: "/dashboard/admin/bookings", icon: ClipboardList },
           { name: "SMTP Settings", href: "/dashboard/admin/smtp", icon: Mail },
+          { name: "Payment Gateway", href: "/dashboard/admin/payment-settings", icon: CreditCard },
         ],
       });
     }
@@ -135,12 +137,20 @@ export default function DashboardSidebar({ mobileOpen, setMobileOpen }: SidebarP
               src={user.photoURL || user.avatar}
               alt={user.name || "User"}
               className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                if (e.currentTarget.nextElementSibling) {
+                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                }
+              }}
             />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-            </div>
-          )}
+          ) : null}
+          <div
+            className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+            style={{ display: user?.photoURL || user?.avatar ? "none" : "flex" }}
+          >
+            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
               {user?.name || "User"}

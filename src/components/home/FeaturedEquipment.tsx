@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Sparkles,
   MapPin,
@@ -149,17 +149,7 @@ export function FeaturedEquipment() {
     if (isAuthenticated) {
       router.push(`/equipment/${equipmentId}`);
     } else {
-      // Toast notice and redirect to login with return path
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      }).fire({
-        icon: "info",
-        title: "Please login to view equipment details & booking",
-      });
+      toast("Please login to view equipment details & booking", { icon: "🔒" });
       router.push(`/login?redirect=/equipment/${equipmentId}`);
     }
   };
@@ -292,13 +282,31 @@ export function FeaturedEquipment() {
                           <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                           <span className="truncate">{item.location}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-amber-500 font-semibold shrink-0">
-                          <Star className="w-3.5 h-3.5 fill-current" />
-                          <span>{item.rating || "4.8"}</span>
-                          <span className="text-slate-400 font-normal">
-                            ({item.totalReviews || 12})
-                          </span>
-                        </div>
+                        {(() => {
+                          const total = typeof (item as any).reviewCount === "number"
+                            ? (item as any).reviewCount
+                            : (typeof item.totalReviews === "number" ? item.totalReviews : 0);
+                          const rating = typeof (item as any).averageRating === "number"
+                            ? (item as any).averageRating
+                            : (typeof item.rating === "number" ? item.rating : 0);
+                          return (
+                            <div className="flex items-center gap-1 font-semibold shrink-0">
+                              <Star
+                                className={`w-3.5 h-3.5 ${
+                                  total > 0 ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"
+                                }`}
+                              />
+                              {total > 0 ? (
+                                <>
+                                  <span className="text-amber-500 font-bold">{Number(rating).toFixed(1)}</span>
+                                  <span className="text-slate-400 font-normal">({total})</span>
+                                </>
+                              ) : (
+                                <span className="text-slate-400 font-normal text-[11px]">No reviews yet</span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Equipment Title */}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import api from "@/services/api";
 import { uploadToImgBB } from "@/utils/uploadImage";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Package,
   UploadCloud,
@@ -77,20 +78,9 @@ export default function AddEquipmentPage() {
       setFormData((prev) => ({ ...prev, image: url }));
       setImagePreview(url);
 
-      Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: "success",
-        title: "Photo uploaded to ImgBB successfully!",
-        showConfirmButton: false,
-        timer: 2000,
-      });
+      toast.success("Photo uploaded successfully!");
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Image Upload Failed",
-        text: err.message || "Could not upload image. You can also paste an image URL directly.",
-      });
+      toast.error(err.message || "Could not upload image. You can also paste an image URL directly.");
     } finally {
       setUploadingImage(false);
     }
@@ -100,29 +90,17 @@ export default function AddEquipmentPage() {
     e.preventDefault();
 
     if (!formData.name.trim() || !formData.description.trim() || !formData.location.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Information",
-        text: "Please provide equipment name, description, and location.",
-      });
+      toast.error("Please provide equipment name, description, and location.");
       return;
     }
 
     if (!formData.image.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Image Required",
-        text: "Please upload an equipment photo or provide an image URL.",
-      });
+      toast.error("Please upload an equipment photo or provide an image URL.");
       return;
     }
 
     if (Number(formData.rentalPrice) <= 0 || Number(formData.availableQuantity) <= 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Price or Quantity",
-        text: "Rental price and quantity must be positive numbers greater than zero.",
-      });
+      toast.error("Rental price and quantity must be positive numbers greater than zero.");
       return;
     }
 
@@ -146,24 +124,13 @@ export default function AddEquipmentPage() {
       const res = await api.post("/equipment", payload);
 
       if (res.data?.success) {
-        await Swal.fire({
-          icon: "success",
-          title: "Equipment Submitted!",
-          text: "Your equipment has been listed with 'Pending' status. It will appear on the public catalog as soon as an administrator approves it.",
-          confirmButtonColor: "#2563eb",
-          confirmButtonText: "View My Inventory",
-        });
-
+        toast.success("Equipment submitted! It will appear on the catalog once approved.");
         router.push("/dashboard/owner/my-equipment");
       } else {
         throw new Error(res.data?.message || "Failed to add equipment");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text: err.response?.data?.message || err.message || "Failed to create equipment listing.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to create equipment listing.");
     } finally {
       setSubmitting(false);
     }

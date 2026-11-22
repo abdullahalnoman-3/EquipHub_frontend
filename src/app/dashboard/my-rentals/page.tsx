@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
 import ReviewModal from "@/components/reviews/ReviewModal";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   CalendarCheck,
   Search,
@@ -20,6 +22,8 @@ import {
   X,
   ArrowRight,
   Filter,
+  Loader2,
+  RotateCcw,
 } from "lucide-react";
 
 export default function MyRentalsPage() {
@@ -29,6 +33,7 @@ export default function MyRentalsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [reviewItem, setReviewItem] = useState<any | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRentals();
@@ -45,6 +50,58 @@ export default function MyRentalsPage() {
       console.error("Failed to fetch customer rentals:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Customer Cancellation (allowed only for Pending & Approved)
+  const handleCancelRental = async (rentalId: string, equipmentName: string) => {
+    const confirm = await Swal.fire({
+      title: "Cancel Rental Reservation?",
+      html: `
+        <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+          Are you sure you want to cancel your rental booking for <strong>"${equipmentName}"</strong>?
+        </p>
+        <div class="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-xs text-purple-900 dark:text-purple-300 text-left space-y-1">
+          <p class="font-bold flex items-center gap-1.5 text-purple-700 dark:text-purple-400">
+            <span>●</span> Refund Process will be initiated
+          </p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Upon cancellation, reserved equipment stock will be released and your payment will immediately enter the refund pipeline (credited back to your original payment method in 3-5 business days).
+          </p>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Cancel & Refund",
+      cancelButtonText: "Keep Rental",
+    });
+
+    if (confirm.isConfirmed) {
+      setCancellingId(rentalId);
+      try {
+        const res = await api.patch(`/bookings/${rentalId}/status`, { status: "Cancelled" });
+        if (res.data?.success) {
+          setRentals((prev) =>
+            prev.map((r) =>
+              r._id === rentalId
+                ? {
+                    ...r,
+                    bookingStatus: "Cancelled",
+                    paymentStatus: "Refund Processing",
+                    refundDetails: { status: "Processing" },
+                  }
+                : r
+            )
+          );
+          toast.success("Rental cancelled & refund initiated! Funds will be returned in 3-5 days.");
+        }
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || err.message || "Failed to cancel rental.");
+      } finally {
+        setCancellingId(null);
+      }
     }
   };
 
@@ -68,11 +125,18 @@ export default function MyRentalsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
+      case "approved":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Approved
+          </span>
+        );
       case "active":
       case "confirmed":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-            <Clock className="w-3.5 h-3.5" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             Active
           </span>
         );
@@ -83,11 +147,12 @@ export default function MyRentalsPage() {
             Completed
           </span>
         );
+      case "rejected":
       case "cancelled":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             <XCircle className="w-3.5 h-3.5" />
-            Cancelled
+            {status?.toLowerCase() === "rejected" ? "Rejected" : "Cancelled"}
           </span>
         );
       default:
@@ -101,10 +166,27 @@ export default function MyRentalsPage() {
   };
 
   const getPaymentBadge = (status: string) => {
-    if (status?.toLowerCase() === "paid") {
+    const s = status?.toLowerCase() || "";
+    if (s === "paid") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
           Paid
+        </span>
+      );
+    }
+    if (s.includes("refund processing") || s.includes("refund pending")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800 animate-pulse">
+          <RotateCcw className="w-3 h-3 animate-spin" />
+          Refund Processing
+        </span>
+      );
+    }
+    if (s === "refunded") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
+          <CheckCircle2 className="w-3 h-3" />
+          Refunded
         </span>
       );
     }
@@ -291,6 +373,21 @@ export default function MyRentalsPage() {
                     <td className="py-4 px-6">{getStatusBadge(rental.bookingStatus)}</td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Cancel button: allowed for Pending and Approved */}
+                        {(rental.bookingStatus?.toLowerCase() === "pending" ||
+                          rental.bookingStatus?.toLowerCase() === "approved") && (
+                          <button
+                            type="button"
+                            disabled={cancellingId === rental._id}
+                            onClick={() => handleCancelRental(rental._id, rental.equipmentName)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 transition disabled:opacity-50 cursor-pointer"
+                            title="Cancel this reservation (Stock will be released)"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Cancel</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() => setReviewItem(rental)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 transition"
@@ -342,15 +439,29 @@ export default function MyRentalsPage() {
                   <div>{getStatusBadge(rental.bookingStatus)}</div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                   <div>{getPaymentBadge(rental.paymentStatus)}</div>
-                  <button
-                    onClick={() => setSelectedInvoice(rental)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                  >
-                    <Receipt className="w-3.5 h-3.5" />
-                    <span>View Receipt</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {(rental.bookingStatus?.toLowerCase() === "pending" ||
+                      rental.bookingStatus?.toLowerCase() === "approved") && (
+                      <button
+                        type="button"
+                        disabled={cancellingId === rental._id}
+                        onClick={() => handleCancelRental(rental._id, rental.equipmentName)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:border-rose-800"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Cancel</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelectedInvoice(rental)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>View Receipt</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -429,6 +540,21 @@ export default function MyRentalsPage() {
                   <span className="text-slate-900 dark:text-white">Total Amount Paid</span>
                   <span className="text-blue-600 dark:text-blue-400 text-base">${selectedInvoice.totalAmount}</span>
                 </div>
+
+                {selectedInvoice.paymentStatus?.toLowerCase().includes("refund") && (
+                  <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-300 space-y-1">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="flex items-center gap-1.5 text-purple-700 dark:text-purple-400">
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Refund Status:
+                      </span>
+                      <span>{selectedInvoice.paymentStatus} (${selectedInvoice.totalAmount})</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Refund is processing back to your original payment account (Stripe) within 3-5 business days.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

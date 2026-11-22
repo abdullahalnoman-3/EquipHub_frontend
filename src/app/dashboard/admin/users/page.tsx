@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Users,
   Search,
@@ -64,21 +65,10 @@ export default function AdminUsersPage() {
           prev.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
         );
 
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: `Role updated to ${newRole}!`,
-          showConfirmButton: false,
-          timer: 2000,
-        });
+        toast.success(`Role updated to ${newRole}!`);
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Role Update Failed",
-        text: err.response?.data?.message || err.message || "Failed to update role.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to update role.");
     } finally {
       setUpdatingId(null);
     }

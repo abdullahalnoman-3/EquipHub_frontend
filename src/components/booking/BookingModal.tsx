@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   X,
   Calendar,
@@ -96,48 +97,28 @@ export function BookingModal({
     e.preventDefault();
 
     if (!isAuthenticated) {
-      Swal.fire({
-        icon: "info",
-        title: "Login Required",
-        text: "Please sign in to complete your equipment booking.",
-      });
+      toast.error("Please sign in to complete your equipment booking.");
       router.push(`/login?redirect=/equipment/${equipment._id}`);
       return;
     }
 
     if (!startDate || !endDate) {
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Dates",
-        text: "Please select both a start and end rental date.",
-      });
+      toast.error("Please select both a start and end rental date.");
       return;
     }
 
     if (new Date(endDate) <= new Date(startDate)) {
-      Swal.fire({
-        icon: "error",
-        title: "Invalid Dates",
-        text: "Rental end date must be after the start date.",
-      });
+      toast.error("Rental end date must be after the start date.");
       return;
     }
 
     if (!contactNumber.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Contact Phone Required",
-        text: "Please enter a valid phone number so the owner can coordinate handover.",
-      });
+      toast.error("Please enter a valid phone number so the owner can coordinate handover.");
       return;
     }
 
     if (!deliveryAddress.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Delivery / Site Address Required",
-        text: "Please specify the site address where equipment will be operated.",
-      });
+      toast.error("Please specify the site address where equipment will be operated.");
       return;
     }
 
@@ -175,19 +156,11 @@ export function BookingModal({
         // Redirect directly to Stripe Checkout
         window.location.href = res.data.url;
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Payment Error",
-          text: res.data?.message || "Failed to create checkout session.",
-        });
+        toast.error(res.data?.message || "Failed to create checkout session.");
         setSubmitting(false);
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Checkout Error",
-        text: err.response?.data?.message || err.message || "Failed to initiate payment.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to initiate payment.");
       setSubmitting(false);
     }
   };

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Mail,
   Server,
@@ -82,21 +83,10 @@ export default function AdminSMTPPage() {
         setIsConfigured(true);
         setLastUpdated(new Date().toLocaleString());
 
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: "SMTP settings saved successfully!",
-          showConfirmButton: false,
-          timer: 2500,
-        });
+        toast.success("SMTP settings saved successfully!");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Configuration Failed",
-        text: err.response?.data?.message || err.message || "Failed to update SMTP settings.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to update SMTP settings.");
     } finally {
       setSaving(false);
     }
@@ -106,13 +96,8 @@ export default function AdminSMTPPage() {
     setTesting(true);
     setTimeout(() => {
       setTesting(false);
-      Swal.fire({
-        icon: "success",
-        title: "Test Email Dispatched!",
-        text: `A handshake diagnostic probe was sent via ${formData.host}:${formData.port} to ${formData.user || formData.fromEmail}.`,
-        confirmButtonColor: "#2563eb",
-      });
-    }, 1500);
+      toast.success(`Test email probe dispatched via ${formData.host}:${formData.port}`);
+    }, 1200);
   };
 
   return (

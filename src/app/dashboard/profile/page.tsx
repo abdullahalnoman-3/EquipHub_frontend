@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { uploadToImgBB } from "@/utils/uploadImage";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   User,
   Mail,
@@ -16,6 +16,9 @@ import {
   Save,
   Loader2,
   CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  X,
   Sparkles,
   Lock,
   ExternalLink,
@@ -28,8 +31,23 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [photoURL, setPhotoURL] = useState("");
+  const [imageError, setImageError] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [toastBanner, setToastBanner] = useState<{
+    type: "success" | "error" | "warning";
+    title: string;
+    message: string;
+  } | null>(null);
+
+  // Auto-dismiss in-app toast notification banner
+  useEffect(() => {
+    if (!toastBanner) return;
+    const timer = setTimeout(() => {
+      setToastBanner(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [toastBanner]);
 
   // Initialize form with current user details
   useEffect(() => {
@@ -38,10 +56,11 @@ export default function ProfilePage() {
       setPhone(user.phone || "");
       setAddress(user.address || "");
       setPhotoURL(user.photoURL || user.avatar || "");
+      setImageError(false);
     }
   }, [user]);
 
-  // Handle direct image file upload to ImgBB
+  // Handle direct image file upload
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -50,20 +69,27 @@ export default function ProfilePage() {
       setUploadingPhoto(true);
       const uploadedUrl = await uploadToImgBB(file);
       setPhotoURL(uploadedUrl);
+      setImageError(false);
 
-      Swal.fire({
-        toast: true,
-        position: "top-end",
+      Toast.fire({
         icon: "success",
         title: "Photo uploaded successfully!",
-        showConfirmButton: false,
-        timer: 2500,
+      });
+
+      setToastBanner({
+        type: "success",
+        title: "Avatar Uploaded",
+        message: "Your new photo is staged. Click 'Save Profile Changes' below to update.",
       });
     } catch (err: any) {
-      Swal.fire({
+      Toast.fire({
         icon: "error",
+        title: err.message || "Failed to upload image",
+      });
+      setToastBanner({
+        type: "error",
         title: "Upload Failed",
-        text: err.message || "Failed to upload image. You can also paste an image URL directly.",
+        message: err.message || "Failed to upload image. You can also paste an image URL directly.",
       });
     } finally {
       setUploadingPhoto(false);
@@ -75,11 +101,7 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!name.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Name Required",
-        text: "Please enter your full name.",
-      });
+      toast.error("Please enter your full name before saving.");
       return;
     }
 
@@ -108,22 +130,12 @@ export default function ProfilePage() {
         }
         await refreshUser();
 
-        Swal.fire({
-          icon: "success",
-          title: "Profile Updated!",
-          text: "Your profile information has been successfully saved.",
-          timer: 2200,
-          showConfirmButton: false,
-        });
+        toast.success("Profile updated successfully!");
       } else {
         throw new Error(res.data?.message || "Failed to update profile");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: err.response?.data?.message || err.message || "Could not save profile changes.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Could not save profile changes.");
     } finally {
       setSaving(false);
     }
@@ -141,7 +153,57 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn relative">
+      {/* Sleek Floating In-App Toast Notification */}
+      {toastBanner && (
+        <div className="fixed top-20 right-6 z-50 max-w-sm w-full animate-slideIn">
+          <div
+            className={`p-4 rounded-2xl shadow-2xl border flex items-start gap-3 backdrop-blur-md transition-all ${
+              toastBanner.type === "success"
+                ? "bg-white/95 dark:bg-slate-900/95 border-emerald-500/30 text-slate-800 dark:text-slate-100 shadow-emerald-500/10"
+                : toastBanner.type === "warning"
+                ? "bg-white/95 dark:bg-slate-900/95 border-amber-500/30 text-slate-800 dark:text-slate-100 shadow-amber-500/10"
+                : "bg-white/95 dark:bg-slate-900/95 border-rose-500/30 text-slate-800 dark:text-slate-100 shadow-rose-500/10"
+            }`}
+          >
+            <div className="shrink-0 mt-0.5">
+              {toastBanner.type === "success" && (
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              )}
+              {toastBanner.type === "warning" && (
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+              )}
+              {toastBanner.type === "error" && (
+                <div className="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                {toastBanner.title}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                {toastBanner.message}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastBanner(null)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
+              aria-label="Dismiss toast"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -162,11 +224,12 @@ export default function ProfilePage() {
             {/* Avatar with Upload Badge */}
             <div className="relative z-10 inline-block mt-8 mb-4">
               <div className="relative w-28 h-28 rounded-full ring-4 ring-white dark:ring-slate-900 shadow-xl overflow-hidden mx-auto bg-slate-100 dark:bg-slate-800">
-                {photoURL ? (
+                {photoURL && !imageError ? (
                   <img
                     src={photoURL}
                     alt={user?.name || "Profile"}
                     className="w-full h-full object-cover"
+                    onError={() => setImageError(true)}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-3xl font-extrabold">

@@ -84,12 +84,20 @@ export default function DashboardNavbar({ onMenuClick }: NavbarProps) {
               src={user.photoURL || user.avatar}
               alt={user.name || "User"}
               className="w-7 h-7 rounded-full object-cover border border-slate-300 dark:border-slate-700"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                if (e.currentTarget.nextElementSibling) {
+                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                }
+              }}
             />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-            </div>
-          )}
+          ) : null}
+          <div
+            className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center"
+            style={{ display: user?.photoURL || user?.avatar ? "none" : "flex" }}
+          >
+            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+          </div>
           <span className="hidden sm:inline-block text-xs font-semibold text-slate-700 dark:text-slate-300">
             {user?.name?.split(" ")[0] || "Account"}
           </span>

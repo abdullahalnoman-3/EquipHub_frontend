@@ -25,47 +25,63 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const queryTxnId = searchParams.get("txn_id");
+  const alreadyConfirmed = searchParams.get("confirmed") === "true";
 
   const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
-  const [transactionId, setTransactionId] = useState<string>("");
+  const [transactionId, setTransactionId] = useState<string>(queryTxnId || "");
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const hasProcessedRef = React.useRef(false);
 
   useEffect(() => {
+    if (hasProcessedRef.current) return;
+    hasProcessedRef.current = true;
+
     const processBooking = async () => {
       try {
         setLoading(true);
 
-        // Retrieve pending booking data from session storage
-        const savedBooking = sessionStorage.getItem("equiphub_pending_booking");
+        // Retrieve booking data from session storage
+        const confirmedRaw = sessionStorage.getItem("equiphub_confirmed_booking");
+        const pendingRaw = sessionStorage.getItem("equiphub_pending_booking");
+        sessionStorage.removeItem("equiphub_pending_booking"); // clear immediately
+
         let parsedBooking: any = null;
-        if (savedBooking) {
-          parsedBooking = JSON.parse(savedBooking);
+        if (confirmedRaw) {
+          try {
+            parsedBooking = JSON.parse(confirmedRaw);
+          } catch (e) {}
+        } else if (pendingRaw) {
+          try {
+            parsedBooking = JSON.parse(pendingRaw);
+          } catch (e) {}
+        }
+
+        if (parsedBooking) {
           setBookingDetails(parsedBooking);
         }
 
-        let txnId = "txn_" + Date.now();
+        let txnId = queryTxnId || "txn_" + Date.now();
 
         // Verify session with backend if session_id is present
-        if (sessionId) {
+        if (sessionId && !queryTxnId) {
           try {
             const verifyRes = await api.get(`/payments/verify-session/${sessionId}`);
             if (verifyRes.data?.success) {
               txnId = verifyRes.data.transactionId || sessionId;
-              setTransactionId(txnId);
             }
           } catch (e) {
-            setTransactionId(sessionId);
+            txnId = sessionId;
           }
-        } else {
-          setTransactionId(txnId);
         }
+        setTransactionId(txnId);
 
-        // Persist booking in MongoDB via backend API
-        if (parsedBooking && parsedBooking.equipmentId) {
+        // Only persist if this was an external Stripe redirect and not already submitted
+        if (!alreadyConfirmed && parsedBooking && parsedBooking.equipmentId) {
           try {
             await api.post("/bookings", {
               equipmentId: parsedBooking.equipmentId,
@@ -78,8 +94,6 @@ function PaymentSuccessContent() {
               contactNumber: parsedBooking.contactNumber,
               notes: parsedBooking.notes || "",
             });
-            // Clear pending session once saved
-            sessionStorage.removeItem("equiphub_pending_booking");
           } catch (bookErr) {
             console.error("Booking record notice:", bookErr);
           }

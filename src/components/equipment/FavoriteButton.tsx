@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import { Heart, Loader2 } from "lucide-react";
 
 interface FavoriteButtonProps {
@@ -55,15 +55,7 @@ export function FavoriteButton({
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-      }).fire({
-        icon: "info",
-        title: "Please sign in to save items to your favorites",
-      });
+      toast.error("Please sign in to save items to your favorites");
       router.push(`/login?redirect=/equipment/${equipmentId}`);
       return;
     }
@@ -78,40 +70,20 @@ export function FavoriteButton({
       if (nextState) {
         await api.post("/favorites", { equipmentId });
         localStorage.setItem(`fav_${equipmentId}`, "true");
-        Swal.mixin({
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 2000,
-        }).fire({
-          icon: "success",
-          title: "Added to your favorites ❤️",
-        });
+        toast.success("Added to your favorites ❤️");
       } else {
         await api.delete(`/favorites/${equipmentId}`);
         localStorage.removeItem(`fav_${equipmentId}`);
-        Swal.mixin({
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 2000,
-        }).fire({
-          icon: "info",
-          title: "Removed from favorites",
-        });
+        toast("Removed from favorites", { icon: "💔" });
       }
     } catch (err: any) {
       // If error occurs (e.g. non-customer role or offline), keep local fallback
       localStorage.setItem(`fav_${equipmentId}`, nextState ? "true" : "false");
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      }).fire({
-        icon: nextState ? "success" : "info",
-        title: nextState ? "Saved to your favorites ❤️" : "Removed from favorites",
-      });
+      if (nextState) {
+        toast.success("Saved to your favorites ❤️");
+      } else {
+        toast("Removed from favorites", { icon: "💔" });
+      }
     } finally {
       setLoading(false);
     }

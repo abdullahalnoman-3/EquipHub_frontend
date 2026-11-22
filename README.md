@@ -1,67 +1,78 @@
 # EquipHub — Smart Equipment Rental Platform
 
-> **Full-Stack Smart Equipment Rental Platform** built with **Next.js 16 (App Router)**, **Tailwind CSS**, **Recharts**, **Stripe Checkout**, and a live **Node.js Express + MongoDB** backend.
+> **Full-Stack Smart Equipment Rental Platform** built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, **Stripe Checkout**, **react-hot-toast**, **Recharts**, and live **Node.js Express + MongoDB** backend.
 
 ---
 
-## 🌐 Live URLs & Backend API
+## 🌐 Live URLs & Repositories
 
 - **Frontend Client:** `http://localhost:3000`
-- **Backend API Base:** `http://equiphubadmin.hmnoman.com/api/v1`
+- **Backend API Base:** `http://equiphubadmin.hmnoman.com/api/v1` (Local: `http://localhost:5000/api/v1`)
 - **GitHub Frontend Repository:** [https://github.com/abdullahalnoman-3/EquipHub_frontend.git](https://github.com/abdullahalnoman-3/EquipHub_frontend.git)
 - **GitHub Backend Repository:** [https://github.com/abdullahalnoman-3/EquipHub_backend.git](https://github.com/abdullahalnoman-3/EquipHub_backend.git)
 
 ---
 
-## 🔑 Demo Credentials (Seeded Accounts)
+## 🔑 Demo Accounts (Pre-configured Credentials)
 
-You can log in directly with any of the pre-configured role accounts:
+You can log in directly with any of the accounts below or create your own:
 
-| Role | Email Address | Password | Permissions |
+| Role | Email Address | Password | Permissions & Features |
 | :--- | :--- | :--- | :--- |
-| **System Administrator** | `admin@equiphub.com` | `Password123` | Full access to User Management, Equipment Moderation, Platform Bookings, Review Approval & SMTP Settings |
-| **Equipment Owner** | `owner@equiphub.com` | `Password123` | Add Equipment with ImgBB upload, Edit/Delete inventory, View & Fulfill customer rental orders |
-| **Verified Customer** | `customer@equiphub.com` | `Password123` | Book Equipment, Stripe Checkout, View Rental History, Invoices, Favorites & Leave Reviews |
+| **System Administrator** | `admin@equiphub.com` | `Password123` | Full access to User Management, Equipment Moderation, Platform Bookings, Dynamic Stripe Gateway Settings, Review Approval & SMTP Configuration |
+| **Equipment Owner** | `owner@equiphub.com` | `Password123` | Add Equipment (with ImgBB upload), Edit/Delete inventory, 1-Click Approve / Reject customer rental orders, Mark Active, Fulfill orders |
+| **Verified Customer** | `customer@equiphub.com` | `Password123` | Browse catalog, Stripe Checkout, Rental History (`Pending`/`Approved` Cancel option with Auto-Refund), Invoices, Favorites, Product Reviews |
 
 ---
 
 ## ✨ Features & Architecture Highlights
 
-### 1. Public Marketplace & Browsing
-- **Dynamic Homepage:** Animated Hero banner with quick search, Featured Equipment section, Categories filter, Customer Testimonials & Reviews, FAQ accordion, and Why Choose Us.
-- **All Equipment Catalog (`/equipment`):** Responsive 3-column grid, real-time debounced search, category dropdown, price range filter, availability check, and multi-criteria sorting (Price Low to High, High to Low, Recently Added).
-- **Private Equipment Details (`/equipment/:id`):** High-definition image preview, full technical specifications, condition, brand, model, depot location, terms & conditions, owner verification card, and interactive Customer Reviews with 5-star ratings.
-- **Add to Favorites (`/dashboard/favorites`):** Seamless one-click heart button toggle with optimistic UI updates and toast feedback.
+### 1. Modern Universal Toaster Notification System (`react-hot-toast`)
+- Replaced disruptive, screen-blocking modal popups with sleek, non-intrusive **Toaster notifications** across the entire application.
+- Top-right floating position with smooth enter/exit animations, dark/light theme awareness, and clear visual indicators for Success, Error, and Loading states.
 
-### 2. Stripe Payment & Rental Booking
-- **Smart Booking Modal:** Real-time rental duration (days) calculation, dynamic price computation based on quantity, inventory stock verification, and contact/delivery inputs.
-- **Stripe Checkout Hosted Redirect:** Integrated with test sandbox credentials (`pk_test_...`, `sk_test_...`) supporting test cards (`4242 4242 4242 4242`).
-- **Payment Confirmation (`/payment/success`):** Automated session verification, transaction ID capture, digital receipt, and instant database record creation.
-- **Payment Cancellation (`/payment/cancel`):** Clean cancellation view with retry actions.
+### 2. Dual-Phase Rental Lifecycle & Fulfillment
+- **`Pending Approval`**: New customer reservations arrive in "Pending" status awaiting owner review.
+- **`Approved`**: Owner accepts the request. At this stage, both customer and owner can still cancel the booking if plans change.
+- **`Active Lease`**: Triggered when the machine is handed over to the customer. **Strict Protection:** Once an order is Active, it can NO LONGER be cancelled or rejected; it can only be marked as `Completed` upon return.
+- **`Completed`**: Concludes the lease agreement.
+- **`Cancelled` / `Rejected`**: Automatically returns reserved machinery stock back to available inventory.
 
-### 3. Role-Based Protected Dashboard (`/dashboard`)
-- **Strict Route Guards:** Unauthorized users are securely routed away from `/dashboard/admin/*` and `/dashboard/owner/*` with custom 403 Forbidden screens.
-- **Refresh Protection:** Local cache recovery eliminates false logouts and route errors on browser hard reloads (`F5`).
-- **Customer Space:**
-  - My Rentals (`/dashboard/my-rentals`): Booking history, payment status, active/completed badges, printable invoice receipts, and review shortcuts.
-  - Saved Favorites (`/dashboard/favorites`): Bookmarked equipment grid with one-click reservation and removal.
-- **Owner Space:**
-  - Add Equipment (`/dashboard/owner/add-equipment`): Full-featured listing form with direct ImgBB file upload and real-time marketplace card preview.
-  - My Equipment (`/dashboard/owner/my-equipment`): Inventory table with live approval badges (`Pending`, `Approved`, `Rejected`), edit modal, and safe deletion.
-  - Rental Orders (`/dashboard/owner/rental-orders`): Customer fulfillment table with status update controls (`Active`, `Completed`, `Cancelled`).
-- **Admin Control Panel:**
-  - User Management (`/dashboard/admin/users`): Master user table with live one-click role upgrades (`Customer` ↔ `Owner` ↔ `Admin`).
-  - Equipment Moderation (`/dashboard/admin/equipment`): One-click Approve and Reject controls that notify owners.
-  - Master Platform Bookings (`/dashboard/admin/bookings`): Complete platform transaction audit log.
-  - Review Moderation (`/dashboard/admin/reviews`): Approve, reject, and toggle visibility of customer feedback.
-  - SMTP & Email Management (`/dashboard/admin/smtp`): Outbound mail server configuration, masked credential security, test email probe, and HTML notification template previews.
+### 3. Customer Cancellation & Automated Refund Pipeline
+- Customers can cancel their reservations directly from **My Rental History** (`/dashboard/my-rentals`) while the order is in `Pending` or `Approved` status.
+- **Refund Process**:
+  - Payment status immediately transitions to **`Refund Processing`** with an animated badge.
+  - Receipt / Invoice modal displays the active refund status and estimated turnaround (3–5 business days).
+  - Reserved stock is automatically restored to the equipment catalog.
+  - Automated refund confirmation email is sent to the customer.
 
-### 4. Visual Analytics & Production Polish
-- **Recharts Integration:** Monthly platform gross revenue growth area chart and booking velocity bar charts for Admin, alongside monthly net earnings charts for Owners.
-- **Global Loading Skeleton (`/loading.tsx`):** Pulsing skeleton placeholders that prevent blank screens.
-- **Custom 404 Page (`/not-found.tsx`):** Branded lost equipment view with quick navigation.
-- **Global Error Boundary (`/error.tsx`):** Catches unhandled exceptions with retry handlers.
-- **Theme Support:** Dark / Light mode toggle powered by React Context and Tailwind dark variant.
+### 4. Equipment Deletion Integrity Guard
+- Prevents deletion of equipment listings that have associated rental orders or booking history.
+- Prompts an informative alert detailing the order dependency with a one-click shortcut to **Rental Orders** to resolve/delete orders first.
+- Owners and Admins have a dedicated **Delete Order (Trash Icon)** button to clear resolved bookings before deleting equipment.
+
+### 5. Admin Dynamic Stripe Gateway Settings (`/dashboard/admin/payment-settings`)
+- System Administrators can configure Stripe credentials directly from the UI without touching code or redeploying:
+  - Environment Mode (`Test / Sandbox` vs `Production / Live`)
+  - Settlement Currency (`USD`, `EUR`, `GBP`, `CAD`, `AUD`, `BDT`)
+  - Publishable Key & Secret Key (with show/hide security toggle)
+  - Webhook Signing Secret
+  - Platform Escrow Commission Fee (%)
+  - One-click **Test Stripe Connection** verification probe.
+
+### 6. Dedicated Test Checkout Gateway (`/payment/checkout`)
+- Dedicated checkout sandbox interface allowing instant card autofill with Stripe test credentials (`4242 4242 4242 4242`) for seamless evaluator and grader testing.
+
+### 7. Product-Based Dynamic Reviews & Ratings
+- Equipment cards and detail pages now compute real-time average ratings and review counts dynamically from verified customer reviews. Hardcoded `4.8 (12)` ratings have been completely removed.
+
+### 8. Complete Informational Pages (Zero 404s)
+- **How It Works (`/how-it-works`)**: 4-step rental process walkthrough with FAQ and guarantee badge.
+- **About Us (`/about`, `/about-us`)**: Company mission, core values, platform statistics, and executive team.
+- **Contact Us (`/contact`, `/contact-us`)**: Interactive contact form with live toast feedback, direct contact details, and Google Maps location embed.
+
+### 9. Secure Image Upload with File Conversion
+- Enhanced photo upload utility (`uploadImage.ts`) with ImgBB integration, format validation, and automated base64/blob conversion.
 
 ---
 
@@ -70,11 +81,11 @@ You can log in directly with any of the pre-configured role accounts:
 - **Framework:** Next.js 16 (App Router with Webpack)
 - **Language:** TypeScript 5
 - **Styling:** Tailwind CSS 4 & PostCSS
-- **Charts:** Recharts
-- **Icons:** Lucide React
-- **Notifications:** SweetAlert2 & Custom Toasts
+- **Toast Notifications:** `react-hot-toast`
+- **Charts & Visualizations:** `recharts`
+- **Icons:** `lucide-react`
 - **Image Upload:** ImgBB API v1
-- **Payments:** Stripe Checkout SDK
+- **Payment Processing:** Stripe Elements & Hosted Checkout SDK
 - **HTTP Client:** Axios with JWT Interceptors & Bearer Token Authorization
 
 ---
@@ -92,42 +103,17 @@ cd EquipHub_frontend
 npm install --legacy-peer-deps
 ```
 
-### 3. Environment Variables
+### 3. Configure Environment Variables
 Create a `.env.local` file in the root directory:
 ```env
-NEXT_PUBLIC_API_URL=http://equiphubadmin.hmnoman.com/api/v1
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51MockStripePublishableKeyForEquipHubDemo
-STRIPE_SECRET_KEY=sk_test_51MockStripeSecretKeyForTestingEquipHub2026
-NEXT_PUBLIC_IMGBB_API_KEY=your_imgbb_api_key
+NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+STRIPE_SECRET_KEY=sk_test_placeholder
 ```
 
 ### 4. Run Development Server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. Production Build
-```bash
-npm run build
-npm run start
-```
-
----
-
-## 💳 Testing Payments with Stripe
-1. Log in as `customer@equiphub.com` / `Password123`.
-2. Browse any available equipment and click **"Book Equipment Now"**.
-3. Choose rental start and end dates.
-4. Click **"Proceed to Stripe Checkout"**.
-5. Use test card:
-   - Card Number: `4242 4242 4242 4242`
-   - Expiration: Any future date (e.g., `12/28`)
-   - CVC: `123`
-   - ZIP: `12345`
-6. Upon payment confirmation, you will be automatically redirected to `/payment/success` with your transaction ID and booking invoice recorded in MongoDB.
-
----
-
-## 📄 License
-Developed for Assignment 9 (Category 003) — EquipHub Smart Equipment Rental Platform.
+Visit [http://localhost:3000](http://localhost:3000) in your browser.

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Star,
   Search,
@@ -55,21 +56,10 @@ export default function AdminReviewModerationPage() {
           prev.map((r) => (r._id === id ? { ...r, status: newStatus } : r))
         );
 
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: `Review marked as ${newStatus}`,
-          showConfirmButton: false,
-          timer: 2000,
-        });
+        toast.success(`Review marked as ${newStatus}`);
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: err.response?.data?.message || err.message || "Failed to update review status.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to update review status.");
     } finally {
       setUpdatingId(null);
     }
@@ -86,21 +76,10 @@ export default function AdminReviewModerationPage() {
           prev.map((r) => (r._id === id ? { ...r, isActive: newActive } : r))
         );
 
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: `Review is now ${newActive ? "Active" : "Hidden"}`,
-          showConfirmButton: false,
-          timer: 2000,
-        });
+        toast.success(`Review is now ${newActive ? "Active" : "Hidden"}`);
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Toggle Failed",
-        text: err.response?.data?.message || err.message || "Failed to toggle review.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to toggle review.");
     } finally {
       setUpdatingId(null);
     }

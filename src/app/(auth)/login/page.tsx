@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Mail,
   Lock,
@@ -17,15 +17,6 @@ import {
   Briefcase,
   UserCheck,
 } from "lucide-react";
-
-// SweetAlert2 Toast configuration
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 2500,
-  timerProgressBar: true,
-});
 
 function LoginForm() {
   const router = useRouter();
@@ -50,10 +41,7 @@ function LoginForm() {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      Toast.fire({
-        icon: "warning",
-        title: "Please enter your email and password",
-      });
+      toast.error("Please enter your email and password");
       return;
     }
 
@@ -62,25 +50,13 @@ function LoginForm() {
       const result = await login(email, password);
 
       if (result.success) {
-        Toast.fire({
-          icon: "success",
-          title: "Logged in successfully!",
-        });
+        toast.success("Logged in successfully!");
         router.push(redirectPath);
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Login Failed",
-          text: result.message || "Invalid email or password.",
-          confirmButtonColor: "#2563eb",
-        });
+        toast.error(result.message || "Invalid email or password.");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Network Error",
-        text: err.message || "Unable to reach server. Please try again.",
-      });
+      toast.error(err.message || "Unable to reach server. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -99,24 +75,13 @@ function LoginForm() {
 
       const result = await socialLogin(demoGoogleUser);
       if (result.success) {
-        Toast.fire({
-          icon: "success",
-          title: "Signed in with Google!",
-        });
+        toast.success("Signed in with Google!");
         router.push(redirectPath);
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Google Login Failed",
-          text: result.message || "Could not complete Google authentication.",
-        });
+        toast.error(result.message || "Could not complete Google authentication.");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Google Login Error",
-        text: err.message || "Google sign-in encountered an error.",
-      });
+      toast.error(err.message || "Google sign-in encountered an error.");
     } finally {
       setSocialLoading(false);
     }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar, Footer } from "@/components/common";
+import ToasterProvider from "@/components/common/ToasterProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
           <AuthProvider>
+            <ToasterProvider />
             <div className="flex flex-col min-h-screen">
               <Navbar />
               <div className="flex-1 flex flex-col">{children}</div>

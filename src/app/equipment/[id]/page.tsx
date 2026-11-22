@@ -25,7 +25,7 @@ import {
   Lock,
   Share2,
 } from "lucide-react";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 
 interface EquipmentDetail {
   _id: string;
@@ -163,15 +163,7 @@ export default function EquipmentDetailsPage({
   const handleShare = () => {
     if (typeof window !== "undefined") {
       navigator.clipboard.writeText(window.location.href);
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      }).fire({
-        icon: "success",
-        title: "Link copied to clipboard!",
-      });
+      toast.success("Link copied to clipboard!");
     }
   };
 
@@ -259,6 +251,10 @@ export default function EquipmentDetailsPage({
               <img
                 src={activeImage}
                 alt={equipment.name}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&w=1200&q=80";
+                }}
                 className="w-full h-full object-cover"
               />
 
@@ -347,13 +343,35 @@ export default function EquipmentDetailsPage({
                     <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
                     <span className="font-medium">{equipment.location}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-amber-500 font-bold text-sm">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span>{equipment.rating || "4.9"}</span>
-                    <span className="text-slate-400 font-normal">
-                      ({equipment.totalReviews || 18} reviews)
-                    </span>
-                  </div>
+                  {(() => {
+                    const count = reviews.length > 0
+                      ? reviews.length
+                      : (typeof (equipment as any).reviewCount === 'number'
+                          ? (equipment as any).reviewCount
+                          : (typeof equipment.totalReviews === 'number' ? equipment.totalReviews : 0));
+                    const avg = reviews.length > 0
+                      ? (reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1)
+                      : (typeof (equipment as any).averageRating === 'number'
+                          ? (equipment as any).averageRating.toFixed(1)
+                          : (typeof equipment.rating === 'number' ? equipment.rating.toFixed(1) : "0.0"));
+                    return (
+                      <div className="flex items-center gap-1 font-bold text-sm">
+                        <Star className={`w-4 h-4 ${count > 0 ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`} />
+                        {count > 0 ? (
+                          <>
+                            <span className="text-amber-500">{avg}</span>
+                            <span className="text-slate-400 font-normal">
+                              ({count} {count === 1 ? 'review' : 'reviews'})
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400 font-normal text-xs">
+                            No reviews yet (0 reviews)
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">

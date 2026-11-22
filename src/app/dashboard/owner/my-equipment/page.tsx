@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/services/api";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import {
   Package,
   PlusCircle,
@@ -23,7 +24,11 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
+  Camera,
+  UploadCloud,
+  Image as ImageIcon,
 } from "lucide-react";
+import { uploadToImgBB } from "@/utils/uploadImage";
 
 export default function MyEquipmentPage() {
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
@@ -41,7 +46,9 @@ export default function MyEquipmentPage() {
     condition: "Good",
     location: "",
     description: "",
+    image: "",
   });
+  const [uploadingEditImage, setUploadingEditImage] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -73,7 +80,26 @@ export default function MyEquipmentPage() {
       condition: item.condition || "Good",
       location: item.location || "",
       description: item.description || "",
+      image: item.image || "",
     });
+  };
+
+  // Handle Image Upload for Edit Modal
+  const handleEditImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingEditImage(true);
+      const url = await uploadToImgBB(file);
+      setEditFormData((prev) => ({ ...prev, image: url }));
+
+      toast.success("Photo uploaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Could not upload image. You can also paste an image URL directly.");
+    } finally {
+      setUploadingEditImage(false);
+    }
   };
 
   // Handle Edit Submit
@@ -91,6 +117,7 @@ export default function MyEquipmentPage() {
         condition: editFormData.condition,
         location: editFormData.location,
         description: editFormData.description,
+        image: editFormData.image,
       });
 
       if (res.data?.success) {
@@ -106,27 +133,17 @@ export default function MyEquipmentPage() {
                   condition: editFormData.condition,
                   location: editFormData.location,
                   description: editFormData.description,
+                  image: editFormData.image,
                 }
               : eq
           )
         );
 
         setEditingItem(null);
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: "Equipment updated successfully!",
-          showConfirmButton: false,
-          timer: 2500,
-        });
+        toast.success("Equipment updated successfully!");
       }
     } catch (err: any) {
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: err.response?.data?.message || err.message || "Failed to update item.",
-      });
+      toast.error(err.response?.data?.message || err.message || "Failed to update item.");
     } finally {
       setUpdating(false);
     }
@@ -149,21 +166,35 @@ export default function MyEquipmentPage() {
         const res = await api.delete(`/equipment/${id}`);
         if (res.data?.success) {
           setEquipmentList((prev) => prev.filter((item) => item._id !== id));
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "success",
-            title: "Equipment deleted.",
-            showConfirmButton: false,
-            timer: 2500,
-          });
+          toast.success("Equipment deleted successfully.");
         }
       } catch (err: any) {
-        Swal.fire({
-          icon: "error",
-          title: "Delete Failed",
-          text: err.response?.data?.message || err.message || "Failed to delete item.",
-        });
+        const hasOrders = err.response?.data?.hasOrders;
+        const msg = err.response?.data?.message || err.message || "Failed to delete item.";
+
+        if (hasOrders) {
+          Swal.fire({
+            icon: "warning",
+            title: "Cannot Delete Equipment",
+            html: `
+              <p class="text-sm text-slate-700 dark:text-slate-300 font-medium mb-3">${msg}</p>
+              <div class="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs rounded-xl border border-amber-200 dark:border-amber-800 text-left">
+                <strong>Important:</strong> To safeguard booking and invoice histories, you must first delete or clear the associated customer orders before deleting this equipment listing.
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: "#2563eb",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Go to Rental Orders",
+            cancelButtonText: "Cancel",
+          }).then((modalRes) => {
+            if (modalRes.isConfirmed) {
+              window.location.href = "/dashboard/owner/rental-orders";
+            }
+          });
+        } else {
+          toast.error(msg);
+        }
       }
     }
   };
@@ -342,6 +373,9 @@ export default function MyEquipmentPage() {
                         <img
                           src={item.image || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80"}
                           alt={item.name}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80";
+                          }}
                           className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
                         />
                         <div>
@@ -428,6 +462,83 @@ export default function MyEquipmentPage() {
             </div>
 
             <form onSubmit={handleUpdateSubmit} className="space-y-4 text-xs">
+              {/* Equipment Photo / Media Upload */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold uppercase tracking-wider text-slate-500">
+                    Equipment Photo
+                  </label>
+                  {uploadingEditImage && (
+                    <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-[11px]">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Uploading photo...
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {/* Photo Thumbnail Preview */}
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 shrink-0 shadow-inner group">
+                    <img
+                      src={editFormData.image || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80"}
+                      alt="Equipment Preview"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80";
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                    <label
+                      htmlFor="edit-equipment-image-file"
+                      className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      title="Upload new image"
+                    >
+                      <Camera className="w-5 h-5 mb-0.5" />
+                      <span className="text-[9px] font-bold">Change</span>
+                    </label>
+                  </div>
+
+                  {/* Actions & URL Input */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="edit-equipment-image-file"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 cursor-pointer shadow-xs transition"
+                      >
+                        {uploadingEditImage ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Upload New Photo</span>
+                          </>
+                        )}
+                      </label>
+                      <input
+                        id="edit-equipment-image-file"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditImageFileChange}
+                        disabled={uploadingEditImage}
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="url"
+                        value={editFormData.image}
+                        onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
+                        placeholder="Or paste photo URL directly..."
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-[11px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">
                   Title / Name

@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { FavoriteButton } from "@/components/equipment/FavoriteButton";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import { MapPin, Star, Eye } from "lucide-react";
 
 export interface EquipmentItem {
@@ -41,16 +41,7 @@ export function EquipmentCard({ item }: { item: EquipmentItem }) {
     if (isAuthenticated) {
       router.push(`/equipment/${item._id}`);
     } else {
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      }).fire({
-        icon: "info",
-        title: "Please sign in to view complete equipment details",
-      });
+      toast("Please sign in to view complete equipment details", { icon: "🔒" });
       router.push(`/login?redirect=/equipment/${item._id}`);
     }
   };
@@ -62,6 +53,10 @@ export function EquipmentCard({ item }: { item: EquipmentItem }) {
         <img
           src={displayImage}
           alt={item.name}
+          onError={(e) => {
+            e.currentTarget.src =
+              "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&w=600&q=80";
+          }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
@@ -80,16 +75,14 @@ export function EquipmentCard({ item }: { item: EquipmentItem }) {
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-xs ${
-              isAvailable
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-xs ${isAvailable
                 ? "bg-emerald-600/90 text-white"
                 : "bg-slate-700/90 text-slate-200"
-            }`}
+              }`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isAvailable ? "bg-white animate-pulse" : "bg-slate-400"
-              }`}
+              className={`w-1.5 h-1.5 rounded-full ${isAvailable ? "bg-white animate-pulse" : "bg-slate-400"
+                }`}
             />
             <span>{isAvailable ? "Available" : "Booked"}</span>
           </span>
@@ -105,13 +98,30 @@ export function EquipmentCard({ item }: { item: EquipmentItem }) {
               <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
               <span className="truncate">{item.location}</span>
             </div>
-            <div className="flex items-center gap-1 text-amber-500 font-semibold shrink-0">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span>{item.rating || "4.8"}</span>
-              <span className="text-slate-400 font-normal">
-                ({item.totalReviews || 12})
-              </span>
-            </div>
+            {(() => {
+              const total = typeof (item as any).reviewCount === "number"
+                ? (item as any).reviewCount
+                : (typeof item.totalReviews === "number" ? item.totalReviews : 0);
+              const rating = typeof (item as any).averageRating === "number"
+                ? (item as any).averageRating
+                : (typeof item.rating === "number" ? item.rating : 0);
+              return (
+                <div className="flex items-center gap-1 font-semibold shrink-0">
+                  <Star
+                    className={`w-3.5 h-3.5 ${total > 0 ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"
+                      }`}
+                  />
+                  {total > 0 ? (
+                    <>
+                      <span className="text-amber-500 font-bold">{Number(rating).toFixed(1)}</span>
+                      <span className="text-slate-400 font-normal">({total})</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400 font-normal text-[11px]">No reviews yet</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Title */}
