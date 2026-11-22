@@ -223,7 +223,7 @@ function LoginForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={submitting || socialLoading}
+            disabled={submitting || !!socialLoading}
             className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             {submitting ? (
