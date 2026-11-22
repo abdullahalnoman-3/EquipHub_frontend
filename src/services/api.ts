@@ -25,10 +25,15 @@ const api = axios.create({
   timeout: 20000,
 });
 
-// Request interceptor to attach JWT token
+// Request interceptor to attach JWT token and ensure live production baseURL
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host.includes("equiphub.hmnoman.com") || host.includes("hmnoman.com")) {
+        const proto = window.location.protocol; // "http:" or "https:"
+        config.baseURL = `${proto}//equiphubadmin.hmnoman.com/api/v1`;
+      }
       const token = localStorage.getItem("equiphub_token");
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
